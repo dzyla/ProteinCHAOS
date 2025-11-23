@@ -45,3 +45,6 @@ Interactive exploration of "how a protein might move" at a very high level.
 
 <img width="5781" height="2160" alt="chaos_vc_8UT2_graphite" src="https://github.com/user-attachments/assets/73c2d5e8-c3a5-4a15-bc82-abb040993dee" />
 <img width="2500" height="934" alt="chaos_vc_8UT2_magma" src="https://github.com/user-attachments/assets/4bdfc15d-1d68-4e7d-8f39-b91e0f1d4cfb" />
+
+### Disclaimer
+This project is not affiliated with or endorsed by RCSB or AlphaFold. All protein structures are sourced from publicly available databases. This software is intended for educational and artistic purposes only and was vibe coded using Gemini 3 Pro.

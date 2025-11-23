@@ -1753,7 +1753,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           else if (theme === 'bio') { r = t * 50; g = t * 255; b = t * 80; }
           else if (theme === 'cyber') { r = t * 255; g = (1-t)*255; b = 255; }
           else if (theme === 'gold') { r = 15 + t * 240; g = 10 + t * 205; b = t * 100; }
-          else if (theme === 'quantum') { const g = Math.pow(t, 0.6); r = 60 + g * 195; g = 50 + Math.pow(t, 1.2) * 140; b = 160 + g * 95; }
+          else if (theme === 'quantum') { const glow = Math.pow(t, 0.6); r = 60 + glow * 195; g = 50 + Math.pow(t, 1.2) * 140; b = 160 + glow * 95; }
           else if (theme === 'viridis') { if (t < 0.33) { const lt = t / 0.33; r = 68 + (59-68)*lt; g = 1 + (82-1)*lt; b = 84 + (139-84)*lt; } else if (t < 0.66) { const lt = (t - 0.33) / 0.33; r = 59 + (33-59)*lt; g = 82 + (144-82)*lt; b = 139 + (141-139)*lt; } else { const lt = (t - 0.66) / 0.34; r = 33 + (253-33)*lt; g = 144 + (231-144)*lt; b = 141 + (37-141)*lt; } }
           else if (theme === 'magma') { if (t < 0.33) { const lt = t / 0.33; r = 15 + (81-15)*lt; g = 0 + (24-0)*lt; b = 30 + (124-30)*lt; } else if (t < 0.66) { const lt = (t - 0.33) / 0.33; r = 81 + (227-81)*lt; g = 24 + (89-24)*lt; b = 124 + (51-124)*lt; } else { const lt = (t - 0.66) / 0.34; r = 227 + (252-227)*lt; g = 89 + (253-89)*lt; b = 51 + (191-51)*lt; } }
           else { r = t * 100; g = t * 150; b = t * 255; }
