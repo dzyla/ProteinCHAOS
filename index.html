@@ -1,0 +1,1957 @@
+<!--
+ProteinCHAOS: MD-inspired protein art engine
+Copyright (C) 2025 Dawid Zyla
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+This software is a merge of scientific concepts and artistic interpretations. While efforts have been made to ensure accuracy, the generated visuals may not perfectly represent real-world protein dynamics. Think about it as a creative exploration rather than a precise scientific tool.
+
+Inspired by long exposure photography, generative art, and molecular dynamics simulations, ProteinCHAOS brings proteins to life through motion and color.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ProteinCHAOS | VC by Dawid Zyla v7.0 (Glycan Fix)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>    
+
+    <style>
+      /* Modern "Dark Glass" Theme */
+      :root {
+        --bg-dark: #09090b;
+        --panel-bg: rgba(24, 24, 27, 0.85);
+        --panel-border: rgba(255, 255, 255, 0.08);
+        --accent: #3b82f6;
+        --accent-hover: #2563eb;
+        --text-main: #e4e4e7;
+        --text-muted: #a1a1aa;
+      }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: var(--bg-dark);
+        color: var(--text-main);
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        overscroll-behavior: none;
+      }
+
+      /* Layout */
+      #app-container {
+        display: flex;
+        width: 100vw;
+        height: 100vh; 
+        height: 100dvh; 
+      }
+
+      #sidebar {
+        width: 360px;
+        min-width: 360px;
+        background: var(--panel-bg);
+        border-right: 1px solid var(--panel-border);
+        display: flex;
+        flex-direction: column;
+        z-index: 20;
+        overflow-y: auto;
+        backdrop-filter: blur(20px);
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+        -webkit-overflow-scrolling: touch; 
+      }
+
+      #sidebar::-webkit-scrollbar { width: 6px; }
+      #sidebar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+
+      #main-view {
+        flex-grow: 1;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        background: #000;
+        min-width: 0; 
+      }
+
+      /* Viewports */
+      #canvas-3d {
+        height: 40%;
+        width: 100%;
+        position: relative;
+        background: radial-gradient(circle at center, #18181b 0%, #09090b 100%);
+        border-bottom: 1px solid var(--panel-border);
+        overflow: hidden;
+      }
+
+      /* Viewport Overlay Controls */
+      .viewport-overlay {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        z-index: 10;
+        pointer-events: none;
+      }
+      
+      .vp-btn {
+        pointer-events: auto;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        backdrop-filter: blur(4px);
+        transition: all 0.2s ease;
+      }
+      .vp-btn:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        transform: scale(1.1);
+      }
+      .vp-btn svg { width: 20px; height: 20px; fill: currentColor; }
+      
+      .vp-btn.recording {
+        background: rgba(220, 38, 38, 0.8);
+        border-color: #ef4444;
+        animation: pulse-red 1.5s infinite;
+      }
+      
+      @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+      }
+
+      #art-panel {
+        flex-grow: 1;
+        background: #000;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        cursor: crosshair;
+        transition: background 0.3s ease;
+        touch-action: none;
+      }
+
+      #art-canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0; 
+        transition: opacity 0.5s ease;
+      }
+
+      .art-overlay-btn {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        z-index: 20;
+        display: flex;
+        gap: 10px;
+      }
+
+      /* Recording Menu */
+      #rec-menu {
+        position: absolute;
+        bottom: 70px;
+        left: 20px;
+        background: rgba(24, 24, 27, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 8px;
+        display: none;
+        flex-direction: column;
+        gap: 4px;
+        backdrop-filter: blur(10px);
+        min-width: 140px;
+        z-index: 30;
+      }
+      .rec-item {
+        padding: 8px 12px;
+        font-size: 11px;
+        color: #e4e4e7;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .rec-item:hover { background: var(--accent); color: white; }
+      
+      #rec-progress {
+        position: absolute;
+        top: 0; left: 0; height: 3px; background: #ef4444;
+        width: 0%; transition: width 0.1s linear;
+        z-index: 40;
+      }
+
+      /* UI Controls */
+      .panel-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--panel-border);
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), transparent);
+      }
+
+      .control-section {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--panel-border);
+      }
+      .section-title {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 12px;
+        color: var(--text-muted);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+
+      input[type="text"], select, input[type="number"] {
+        background: #27272a; border: 1px solid #3f3f46; color: var(--text-main);
+        padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; outline: none;
+        transition: border-color 0.2s;
+      }
+      input[type="text"]:focus, select:focus, input[type="number"]:focus { border-color: var(--accent); }
+
+      .slider-container { margin-bottom: 12px; }
+      .slider-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.8rem; color: #d4d4d8; }
+      .slider-val { font-family: "JetBrains Mono", monospace; color: var(--accent); font-size: 0.75rem; }
+
+      input[type="range"] {
+        -webkit-appearance: none; width: 100%; height: 4px;
+        background: #3f3f46; border-radius: 2px; outline: none;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 14px; height: 14px;
+        border-radius: 50%; background: #e4e4e7; cursor: pointer;
+        transition: all 0.15s; box-shadow: 0 0 0 1px #000;
+      }
+      input[type="range"]::-webkit-slider-thumb:hover { background: var(--accent); transform: scale(1.2); }
+
+      /* Custom Switch */
+      .toggle-switch {
+          display: flex;
+          align-items: center;
+          background: #27272a;
+          border-radius: 20px;
+          padding: 2px;
+          cursor: pointer;
+          width: 100%;
+          position: relative;
+          border: 1px solid #3f3f46;
+      }
+      .toggle-option {
+          flex: 1;
+          text-align: center;
+          font-size: 10px;
+          padding: 4px 0;
+          z-index: 2;
+          transition: color 0.2s;
+          color: #71717a;
+          font-weight: 600;
+      }
+      .toggle-option.active {
+          color: white;
+      }
+      .toggle-bg {
+          position: absolute;
+          top: 2px; left: 2px; bottom: 2px;
+          width: 50%;
+          background: var(--accent);
+          border-radius: 18px;
+          transition: transform 0.2s ease;
+          z-index: 1;
+      }
+      .toggle-switch[data-state="right"] .toggle-bg {
+          transform: translateX(100%);
+      }
+
+      .btn {
+        width: 100%; padding: 10px; border-radius: 6px;
+        font-size: 0.85rem; font-weight: 600; cursor: pointer;
+        transition: all 0.2s; border: 1px solid transparent;
+        display: flex; justify-content: center; align-items: center; gap: 6px;
+      }
+      .btn-primary { background: var(--accent); color: white; }
+      .btn-primary:hover { background: var(--accent-hover); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+      .btn-secondary { background: #27272a; border-color: #3f3f46; color: var(--text-main); }
+      .btn-secondary:hover { border-color: #71717a; background: #3f3f46; }
+      .btn-danger { background: rgba(220, 38, 38, 0.1); color: #f87171; border-color: rgba(220, 38, 38, 0.3); }
+      .btn-danger:hover { background: rgba(220, 38, 38, 0.2); border-color: #f87171; }
+
+      .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+      .status-active { background: #10b981; box-shadow: 0 0 8px #10b981; }
+      .status-idle { background: #71717a; }
+
+      /* Logo Styles */
+      .brand-logo {
+        font-family: "Inter", sans-serif;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+    .brand-chaos {
+      font-weight: 900;
+      font-style: italic;
+      color: #fff;
+      font-size: 0.95em;
+      background: none !important;
+      -webkit-background-clip: initial !important;
+      -webkit-text-fill-color: #fff !important;
+      text-shadow:
+        0 0 4px #3b82f6,
+        0 0 8px #a21caf,
+        0 0 12px #f59e42,
+        0 0 16px #f43f5e,
+        0 1px 0 #fff;
+      letter-spacing: 0.03em;
+      filter: brightness(1.05) drop-shadow(0 0 2px #3b82f6) drop-shadow(0 0 4px #f43f5e);
+      animation: chaos-glow 2.5s linear infinite alternate;
+      transition: filter 0.2s;
+    }
+    @keyframes chaos-glow {
+      0% {
+        filter: brightness(1.03) drop-shadow(0 0 2px #3b82f6) drop-shadow(0 0 4px #f43f5e);
+      }
+      50% {
+        filter: brightness(1.13) drop-shadow(0 0 6px #a21caf) drop-shadow(0 0 8px #f59e42);
+      }
+      100% {
+        filter: brightness(1.03) drop-shadow(0 0 2px #3b82f6) drop-shadow(0 0 4px #f43f5e);
+      }
+    }
+
+      #loader {
+        position: fixed; inset: 0; background: rgba(9, 9, 11, 0.95);
+        z-index: 100; display: none; justify-content: center;
+        align-items: center; flex-direction: column; backdrop-filter: blur(5px);
+      }
+      .loader-bar { width: 200px; height: 2px; background: #27272a; margin-top: 20px; overflow: hidden; border-radius: 2px; }
+      .loader-progress { width: 50%; height: 100%; background: var(--accent); animation: progress 1s infinite ease-in-out; transform-origin: 0% 50%; }
+      @keyframes progress { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
+
+      .file-upload-wrapper { position: relative; overflow: hidden; width: 100%; }
+      .file-upload-wrapper input[type="file"] {
+        font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer;
+      }
+
+      /* --- MOBILE OPTIMIZATIONS --- */
+      @media (max-width: 768px) {
+        #app-container {
+          flex-direction: column;
+        }
+        #main-view {
+          width: 100%;
+          height: 55vh; 
+          height: 55dvh;
+          order: 1;
+        }
+        #sidebar {
+          width: 100%;
+          min-width: 0;
+          height: 45vh;
+          height: 45dvh;
+          order: 2;
+          border-right: none;
+          border-top: 1px solid var(--panel-border);
+        }
+        #canvas-3d { height: 30%; }
+        .vp-btn, .btn { min-height: 44px; }
+        input[type="range"] { height: 8px; }
+        input[type="range"]::-webkit-slider-thumb { width: 24px; height: 24px; }
+        .panel-header { padding: 12px 16px; }
+        .control-section { padding: 12px 16px; }
+        #sim-timer { font-size: 10px; top: 10px; right: 10px; }
+        .art-overlay-btn { bottom: 10px; left: 10px; }
+        #rec-menu { bottom: 60px; left: 10px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app-container">
+      <div id="sidebar">
+        <div class="panel-header">
+          <div class="flex items-center justify-between">
+            <h1 class="text-lg text-white brand-logo cursor-help" title="MD-inspired protein art generator. Work with PDB & AlphaFold databases and own PDB files. Larger structures may require more time for desired effects. Only PDB format is supported. Hints: For protein flexibility traces, use higher Temperature settings and lower the stiffness. Experiment with different values to achieve unique visual effects. To show glycosilation dynamics, keep the stiffness high and increase the temperature. High resolution renders will take longer to generate. Enjoy creating stunning protein art!">
+              Protein<span class="brand-chaos">CHAOS</span>
+            </h1>
+            <a href="https://github.com/dzyla" target="_blank" class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-white/20 transition-colors">
+              VC by Dawid Zyla
+            </a>
+          </div>
+          <div class="mt-2 text-xs text-gray-500 flex justify-between items-center">
+            <div class="flex items-center">
+                <span id="sim-status-dot" class="status-dot status-idle"></span>
+                <span id="sim-status-text">Idle</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. Input -->
+        <div class="control-section">
+          <div class="section-title">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+            Source Data (PDB & AF db)
+          </div>
+          
+          <!-- Checkbox Row -->
+          <div class="flex items-center gap-2 mb-3">
+             <label class="text-xs text-gray-400 flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+               <input type="checkbox" id="model-glycans" class="w-3 h-3 accent-blue-500" checked />
+               Model Glycans
+             </label>
+          </div>
+
+          <div class="flex gap-2 mb-2">
+            <input type="text" id="pdb-id" value="2HHB" placeholder="ID / UniProt" class="w-24 text-center font-mono uppercase" />
+            <button onclick="fetchPDB()" class="btn btn-secondary flex-grow">Fetch</button>
+          </div>
+          <div id="fetch-error" class="text-red-400 text-[10px] mb-3 hidden font-mono p-2 bg-red-500/10 border border-red-500/20 rounded"></div>
+          <div class="file-upload-wrapper mb-4">
+            <button class="btn btn-secondary w-full">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              Upload File
+            </button>
+            <input type="file" id="file-upload" accept=".pdb,.ent" onchange="handleFileUpload(this)" />
+          </div>
+          <button onclick="toggleSim()" id="btn-toggle" class="btn btn-primary">Initialize & Start</button>
+        </div>
+
+        <!-- 2. Physics -->
+        <div class="control-section">
+          <div class="section-title">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+            </svg>
+            Physics Settings
+          </div>
+          <div class="slider-container">
+            <div class="slider-header"><span>Temperature (T)</span><span id="temp-val" class="slider-val">0.40</span></div>
+            <input type="range" id="temp-slider" min="0" max="2.5" value="0.4" step="0.01" />
+          </div>
+          <div class="slider-container">
+            <div class="slider-header"><span>Stiffness (K)</span><span id="k-val" class="slider-val">20.0</span></div>
+            <input type="range" id="k-restraint" min="1.0" max="100.0" value="20.0" step="0.1" />
+          </div>
+          <div class="slider-container">
+            <div class="slider-header"><span>Speed (dt)</span><span id="speed-val" class="slider-val">1.00x</span></div>
+            <input type="range" id="sim-speed" min="0.1" max="5.0" value="1.0" step="0.1" />
+          </div>
+        </div>
+
+        <!-- 3. Visuals -->
+        <div class="control-section">
+          <div class="section-title">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            </svg>
+            Generative Camera
+          </div>
+          <!-- STYLE PRESET DROPDOWN -->
+          <div class="mb-4">
+            <label class="text-xs text-gray-500 block mb-1">Style Preset</label>
+            <select id="style-preset" class="w-full" onchange="applyPreset(this.value)">
+              <option value="custom" selected>Custom</option>
+              <optgroup label="Scientific / Editorial">
+                  <option value="editorial-clean">Journal Figure (Ink)</option>
+                  <option value="editorial-dark">Cover Art (Viridis)</option>
+                  <option value="blueprint">Blueprint Technical</option>
+                  <option value="lab">Clinical Lab</option>
+              </optgroup>
+              <optgroup label="Emotional / Abstract">
+                  <option value="chaos-fire">Inferno Collapse</option>
+                  <option value="chaos-gold">Golden Hour</option>
+                  <option value="sketch">Rough Notebook</option>
+                  <option value="cyber">Neon Cyberpunk</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="text-xs text-gray-500 block mb-1">Theme</label>
+            <select id="art-theme" class="w-full">
+              <option value="sunset" selected>Sunset (Purple/Gold)</option>
+              <option value="fire">Inferno (Black Background)</option>
+              <option value="ice">Glacier (Cyan/Blue)</option>
+              <option value="ink">Sumi-e (Ink/White)</option>
+              <option value="rough">Rough Sketch (Pencil/Paper)</option>
+              <option value="charcoal">Charcoal (Dark Sketch)</option>
+              <option value="graphite">Graphite (Clean Pencil)</option>
+              <option value="sakura">Sakura (Pink/White)</option>
+              <option value="lab">Laboratory (Clinical)</option>
+              <option value="editorial">Editorial (Red/BW)</option>
+              <option value="bio">Biohazard (Green)</option>
+              <option value="blueprint">Blueprint (Tech)</option>
+              <option value="heme">Heme Glow (Deep Red)</option>
+              <option value="electrostatic">Electrostatic Field</option>
+              <option value="cyber">Neon Cyberpunk</option>
+              <option value="gold">Golden Hour</option>
+              <option value="quantum">Quantum Foam</option>
+              <option value="viridis">Viridis (Scientific)</option>
+              <option value="magma">Magma (Scientific)</option>
+            </select>
+          </div>
+
+          <!-- RESOLUTION SWITCH -->
+          <div class="mb-4">
+            <label class="text-xs text-gray-500 block mb-1">Render Resolution</label>
+            <div class="toggle-switch" data-state="left" id="res-toggle" onclick="toggleResolution()">
+                <div class="toggle-bg"></div>
+                <div class="toggle-option active">Fast (Screen)</div>
+                <div class="toggle-option">High Res (4K)</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <select id="draw-source" class="w-full">
+              <option value="trace" selected>Backbone Trace</option>
+              <option value="restraints">Elastic Web</option>
+            </select>
+            <select id="proj-plane" class="w-full">
+              <option value="xy">Front (XY)</option>
+              <option value="xz">Top (XZ)</option>
+              <option value="yz">Side (YZ)</option>
+            </select>
+          </div>
+          <div class="slider-container">
+            <div class="slider-header"><span>Zoom Level</span><span id="zoom-val" class="slider-val">35</span></div>
+            <input type="range" id="art-zoom-control" min="5" max="200" value="35" step="1" />
+          </div>
+          <div class="slider-container" title="How quickly old traces fade. High values = long trails.">
+            <div class="slider-header"><span>Trace Persistence</span><span id="decay-val" class="slider-val">98%</span></div>
+            <input type="range" id="art-decay" min="80" max="100" value="98" step="0.1" />
+          </div>
+          <div class="slider-container">
+            <div class="slider-header"><span>Exposure (Gamma)</span><span id="gamma-val" class="slider-val">0.50</span></div>
+            <input type="range" id="art-gamma" min="0.01" max="3.0" value="0.5" step="0.01" />
+          </div>
+          <div class="slider-container">
+            <div class="slider-header"><span>Texture/Noise</span><span id="intensity-val" class="slider-val">40</span></div>
+            <input type="range" id="art-intensity" min="1" max="200" value="40" step="1" />
+          </div>
+          <div class="slider-container" title="Randomness of point placement. High = Fuzzy/Cloudy.">
+            <div class="slider-header"><span>Jitter / Chaos</span><span id="jitter-val" class="slider-val">0.8</span></div>
+            <input type="range" id="art-jitter" min="0" max="5.0" value="0.8" step="0.1" />
+          </div>
+        </div>
+
+        <!-- 4. Data Actions -->
+        <div class="control-section flex-grow flex flex-col justify-end">
+          <div class="flex items-center justify-between mb-3">
+            <label class="text-xs text-gray-500 flex items-center gap-2">
+              <input type="checkbox" id="auto-history-toggle" class="w-3 h-3" />
+              Auto snapshots
+            </label>
+            <div class="flex items-center gap-1">
+              <span class="text-[10px] text-gray-500">every</span>
+              <input type="number" id="auto-history-interval" min="10" max="1000" value="30" class="w-16 text-[10px] bg-[#18181b] border border-[#3f3f46] rounded px-1 py-0.5 text-right" />
+              <span class="text-[10px] text-gray-500">frames</span>
+            </div>
+          </div>
+          <div class="flex gap-2 mb-3">
+            <button onclick="clearArt(false)" class="btn btn-danger text-xs">Clear Canvas</button>
+            <button onclick="saveSnapshot()" class="btn btn-secondary text-xs">Snapshot</button>
+          </div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs text-gray-500">History Restore</span>
+            <span id="history-count" class="text-xs font-mono text-gray-400">0</span>
+          </div>
+          <input type="range" id="history-slider" min="0" max="0" value="0" disabled class="mb-4" />
+          <button onclick="downloadHighRes()" class="btn btn-primary py-3">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            Download HD (Print)
+          </button>
+        </div>
+      </div>
+
+      <div id="main-view">
+        <div id="canvas-3d">
+          <div class="absolute top-4 left-4 text-[10px] font-bold uppercase tracking-widest text-blue-300/80 pointer-events-none bg-black/40 backdrop-blur px-3 py-1.5 rounded border border-white/10">
+            3D Preview
+          </div>
+          <div class="absolute top-4 right-4 pointer-events-auto">
+            <select id="view-color-mode" onchange="update3DColors()" class="bg-black/60 backdrop-blur border border-white/10 text-[10px] text-gray-300 rounded px-2 py-1 outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
+              <option value="atom">Color: Atom</option>
+              <option value="chain">Color: Chain</option>
+            </select>
+          </div>
+          
+          <div class="viewport-overlay">
+              <button class="vp-btn" onclick="toggleSim()" title="Play/Pause">
+                <svg id="vp-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </button>
+          </div>
+        </div>
+        <div id="art-panel">
+          <canvas id="art-canvas"></canvas>
+          <div id="rec-progress"></div>
+          
+          <div id="rec-menu">
+             <div class="rec-item" onclick="startRecording('free')">
+               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+               Free (5s)
+             </div>
+             <div class="rec-item" onclick="startRecording('boomerang')">
+               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+               Boomerang
+             </div>
+          </div>
+
+          <div class="art-overlay-btn">
+              <button id="btn-record" class="vp-btn" onclick="toggleRecordMenu()" title="Record Animation">
+                <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+              </button>
+              <button class="vp-btn" onclick="downloadHighRes()" title="Download High Res Image">
+                <svg viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </button>
+          </div>
+          <div class="absolute bottom-4 right-4 text-[10px] font-bold uppercase tracking-widest text-white/30 pointer-events-none">
+            Accumulation Buffer
+          </div>
+          <div id="sim-timer" class="absolute top-4 right-4 font-mono text-gray-200 font-bold text-sm pointer-events-none drop-shadow-md" title="Simulation Time">t: 0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="loader">
+      <div class="text-white font-bold text-xl tracking-widest">PROCESSING</div>
+      <div class="loader-bar"><div class="loader-progress"></div></div>
+      <div id="loader-text" class="text-gray-500 text-xs mt-4 font-mono">Calculating topology...</div>
+    </div>
+
+    <script type="module">
+      import * as THREE from 'three';
+      import { ArcballControls } from 'three/addons/controls/ArcballControls.js';
+      import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+      import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+      import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+      import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+      import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+      // --------------------------------------------------
+      // WORKER CODE (Physics + Chaos Math, vectorized)
+      // --------------------------------------------------
+      const workerCode = `
+      const CONF = {
+          FRICTION: 2.0,
+          BASE_DT: 0.0015,
+          BOND_R0: 1.0,
+          WCA_SIGMA: 1.0,
+          WCA_EPSILON: 1.0,
+          WCA_CUTOFF_SQ: Math.pow(Math.pow(2, 1/6), 2),
+          PROT_BASE_STIFFNESS: 32.0,
+          PROT_BOND_BASE: 140.0,
+          DNA_BASE_STIFFNESS: 533.3,
+          DNA_BRACE_BASE: 46.6,
+          DNA_CLAMP_BASE: 100.0,
+          DNA_SCAFFOLD_BASE: 60.0,
+          DNA_ANCHOR_BASE: 53.3,
+          DNA_PAIR_BASE: 46.6,
+          DNA_TWIST_BASE: 33.3
+      };
+
+      const FADER_BLOCK_SIZE = 524288;
+      let sentPositions = null;
+      let sentBuffer = null;
+
+      let nAtoms = 0;
+      let posX, posY, posZ;
+      let refX, refY, refZ;
+       
+      let velX, velY, velZ;
+      let forceX, forceY, forceZ;
+      let masses; 
+      let invMasses;
+      let isNucleic;
+      let isGlycan;
+      let bonds = [];
+      let restraints = []; 
+      let drawRestraints = [];
+      let accumulationBuffer = null; 
+      let artWidth = 0, artHeight = 0;
+      let centerX = 0, centerY = 0, centerZ = 0;
+      let stepCount = 0;
+      let isRunning = false;
+      let fadeCursor = 0;
+      let needsFrame = false;
+      let simTime = 0.0; 
+      let frameCounter = 0;
+      let displayFrameSkip = 2;
+
+      let params = {
+          temp: 0.4, k: 20.0, speed: 1.0, zoom: 35.0, jitter: 0.8,
+          intensity: 40, plane: 'xy', source: 'trace', decay: 0.98
+      };
+      
+      let forceHighFPS = false;
+
+      function randNormal() {
+          let u = 0, v = 0;
+          while (u === 0) u = Math.random();
+          while (v === 0) v = Math.random();
+          return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+      }
+
+      function integrate() {
+          if (nAtoms === 0) return;
+          const dt = CONF.BASE_DT;
+          const gamma = CONF.FRICTION;
+          const refMass = 1.0; 
+          
+          const sliderNorm = params.k / 20.0;
+          const restraintScale = sliderNorm * sliderNorm;
+          const bondScale = Math.max(0.15, Math.sqrt(sliderNorm));
+
+          const kProtFlex = CONF.PROT_BASE_STIFFNESS * restraintScale;
+          const kProtBond = CONF.PROT_BOND_BASE * bondScale;
+          const kDNA = CONF.DNA_BASE_STIFFNESS * bondScale; 
+          const kBrace = CONF.DNA_BRACE_BASE * restraintScale;
+          const kClamp = CONF.DNA_CLAMP_BASE * restraintScale; 
+          const kScaffold = CONF.DNA_SCAFFOLD_BASE * restraintScale;
+          const kAnchor = CONF.DNA_ANCHOR_BASE * restraintScale;
+          const kPair = CONF.DNA_PAIR_BASE * restraintScale;
+          const kTwist = CONF.DNA_TWIST_BASE * restraintScale;
+
+          const c = Math.exp(-gamma * dt);
+          const noiseScale = Math.sqrt(params.temp * (1 - c * c) / refMass);
+
+          for (let i = 0; i < nAtoms; i++) {
+              const invM = invMasses[i];
+              let vx = velX[i] + 0.5 * dt * forceX[i] * invM;
+              let vy = velY[i] + 0.5 * dt * forceY[i] * invM;
+              let vz = velZ[i] + 0.5 * dt * forceZ[i] * invM;
+              
+              if (isNaN(vx) || isNaN(vy) || isNaN(vz)) { vx = 0; vy = 0; vz = 0; }
+
+              posX[i] += 0.5 * dt * vx;
+              posY[i] += 0.5 * dt * vy;
+              posZ[i] += 0.5 * dt * vz;
+              
+              const scale = noiseScale * Math.sqrt(invM);
+              vx = c * vx + scale * randNormal();
+              vy = c * vy + scale * randNormal();
+              vz = c * vz + scale * randNormal();
+              posX[i] += 0.5 * dt * vx;
+              posY[i] += 0.5 * dt * vy;
+              posZ[i] += 0.5 * dt * vz;
+              velX[i] = vx; velY[i] = vy; velZ[i] = vz;
+          }
+
+          calcForces(kProtFlex, kDNA, kProtBond, kBrace, kClamp, kScaffold, kAnchor, kPair, kTwist);
+
+          let sx=0, sy=0, sz=0;
+          for (let i = 0; i < nAtoms; i++) {
+              const invM = invMasses[i];
+              velX[i] += 0.5 * dt * forceX[i] * invM;
+              velY[i] += 0.5 * dt * forceY[i] * invM;
+              velZ[i] += 0.5 * dt * forceZ[i] * invM;
+              sx += posX[i]; sy += posY[i]; sz += posZ[i];
+          }
+          removeDrift();
+          stepCount++;
+          simTime += dt;
+      }
+      
+      function removeDrift() {
+          if(nAtoms === 0) return;
+          let sx=0, sy=0, sz=0;
+          for(let i=0; i<nAtoms; i++) { sx += posX[i]; sy += posY[i]; sz += posZ[i]; }
+          sx /= nAtoms; sy /= nAtoms; sz /= nAtoms;
+          if (isNaN(sx)) return;
+          for(let i=0; i<nAtoms; i++) { posX[i] -= sx; posY[i] -= sy; posZ[i] -= sz; }
+          
+          let tx=0, ty=0, tz=0;
+          const stride = Math.max(1, Math.floor(nAtoms/200)); 
+          
+          for(let i=0; i<nAtoms; i+=stride) {
+              tx += posY[i] * refZ[i] - posZ[i] * refY[i];
+              ty += posZ[i] * refX[i] - posX[i] * refZ[i];
+              tz += posX[i] * refY[i] - posY[i] * refX[i];
+          }
+          if (isNaN(tx)) return;
+          const factor = 0.00005; 
+          const rotX = tx * factor;
+          const rotY = ty * factor;
+          const rotZ = tz * factor;
+          
+          for(let i=0; i<nAtoms; i++) {
+              const x = posX[i], y = posY[i], z = posZ[i];
+              const vx = velX[i], vy = velY[i], vz = velZ[i];
+              posX[i] = x + (rotY * z - rotZ * y);
+              posY[i] = y + (rotZ * x - rotX * z);
+              posZ[i] = z + (rotX * y - rotY * x);
+              velX[i] = vx + (rotY * vz - rotZ * vy);
+              velY[i] = vy + (rotZ * vx - rotX * vz);
+              velZ[i] = vz + (rotX * vy - rotY * vx);
+          }
+      }
+
+      function calcForces(kProtFlex, kDNA, kProtBond, kBrace, kClamp, kScaffold, kAnchor, kPair, kTwist) {
+          if (nAtoms === 0) return;
+          forceX.fill(0); forceY.fill(0); forceZ.fill(0);
+
+          for (let b = 0; b < bonds.length; b++) {
+              const i = bonds[b].i, j = bonds[b].j;
+              const dx = posX[j] - posX[i], dy = posY[j] - posY[i], dz = posZ[j] - posZ[i];
+              const r2 = dx*dx + dy*dy + dz*dz;
+              const r = Math.sqrt(r2) || 0.001;
+              const r0 = bonds[b].d || CONF.BOND_R0;
+              const k = (isNucleic[i] || isNucleic[j]) ? kDNA : kProtBond;
+              const f = k * (r - r0);
+              const fClamped = Math.max(-1000, Math.min(1000, f));
+              const fx = (dx/r)*fClamped, fy = (dy/r)*fClamped, fz = (dz/r)*fClamped;
+              forceX[i] += fx; forceY[i] += fy; forceZ[i] += fz;
+              forceX[j] -= fx; forceY[j] -= fy; forceZ[j] -= fz;
+          }
+
+          for (let rIdx = 0; rIdx < restraints.length; rIdx++) {
+              const r = restraints[rIdx];
+              let kLocal = 0;
+              if (isNucleic[r.i] && isNucleic[r.j]) {
+                  kLocal = kClamp * (r.strength || 1.0); 
+              } else if (kProtFlex > 1.0) {
+                  kLocal = kProtFlex * (r.stiffness || 1.0);
+              }
+
+              if (kLocal > 0) {
+                  const dx = posX[r.j] - posX[r.i], dy = posY[r.j] - posY[r.i], dz = posZ[r.j] - posZ[r.i];
+                  const dist = Math.hypot(dx, dy, dz) || 0.001;
+                  const f = kLocal * (dist - r.nativeDist);
+                  const fClamped = Math.max(-500, Math.min(500, f));
+                  const fx = (dx/dist)*fClamped, fy = (dy/dist)*fClamped, fz = (dz/dist)*fClamped;
+                  forceX[r.i] += fx; forceY[r.i] += fy; forceZ[r.i] += fz;
+                  forceX[r.j] -= fx; forceY[r.j] -= fy; forceZ[r.j] -= fz;
+              }
+          }
+          
+          const GLY_REPULSION_DIST = 0.8; 
+          const GLY_REPULSION_SQ = GLY_REPULSION_DIST * GLY_REPULSION_DIST;
+          const GLY_REPULSION_STRENGTH = 80.0;
+
+          for(let i=0; i<nAtoms; i++) {
+              if(!isGlycan[i]) continue;
+              
+              for(let j=0; j<nAtoms; j++) {
+                  if(isGlycan[j]) continue; 
+                  
+                  const dx = posX[i] - posX[j];
+                  if(Math.abs(dx) > GLY_REPULSION_DIST) continue;
+                  const dy = posY[i] - posY[j];
+                  if(Math.abs(dy) > GLY_REPULSION_DIST) continue;
+                  const dz = posZ[i] - posZ[j];
+                  if(Math.abs(dz) > GLY_REPULSION_DIST) continue;
+
+                  const r2 = dx*dx + dy*dy + dz*dz;
+                  if(isNaN(r2) || r2 > GLY_REPULSION_SQ || r2 < 0.0001) continue;
+
+                  const r = Math.sqrt(r2);
+                  const f = GLY_REPULSION_STRENGTH * (GLY_REPULSION_DIST - r);
+                  const fx = (dx/r) * f;
+                  const fy = (dy/r) * f;
+                  const fz = (dz/r) * f;
+
+                  forceX[i] += fx; forceY[i] += fy; forceZ[i] += fz;
+                  forceX[j] -= fx; forceY[j] -= fy; forceZ[j] -= fz;
+              }
+          }
+
+          if (nAtoms > 1500) return;
+          const cutoffSq = CONF.WCA_CUTOFF_SQ;
+          const epsilon = CONF.WCA_EPSILON;
+          for (let i = 0; i < nAtoms; i++) {
+              for (let j = i + 1; j < nAtoms; j++) {
+                  if (Math.abs(i - j) <= 1) continue;
+                  const dx = posX[i] - posX[j];
+                  if (Math.abs(dx) > 2.5) continue;
+                  const dy = posY[i] - posY[j], dz = posZ[i] - posZ[j];
+                  const r2 = dx*dx + dy*dy + dz*dz;
+                  if (r2 < cutoffSq && r2 > 1e-5) {
+                      const r2inv = 1.0 / r2;
+                      const r6inv = r2inv * r2inv * r2inv;
+                      const fScalar = (24 * epsilon * r2inv) * (2 * r6inv * r6inv - r6inv);
+                      const fCap = Math.min(fScalar, 500.0);
+                      const fx = dx*fCap, fy = dy*fCap, fz = dz*fCap;
+                      forceX[i] += fx; forceY[i] += fy; forceZ[i] += fz;
+                      forceX[j] -= fx; forceY[j] -= fy; forceZ[j] -= fz;
+                  }
+              }
+          }
+      }
+
+      function fadeAccumulationBuffer(decayFactor) {
+          if (!accumulationBuffer || decayFactor >= 0.9999) return;
+          const len = accumulationBuffer.length;
+          if (len === 0) return;
+          const chunkSize = Math.min(FADER_BLOCK_SIZE, len);
+          let processed = 0;
+          while (processed < chunkSize) {
+              if (fadeCursor >= len) fadeCursor = 0;
+              const space = Math.min(chunkSize - processed, len - fadeCursor);
+              for (let i = 0; i < space; i++) {
+                  accumulationBuffer[fadeCursor + i] *= decayFactor;
+              }
+              fadeCursor += space;
+              processed += space;
+          }
+      }
+
+      function accumulateChaos() {
+          if (!accumulationBuffer || nAtoms === 0) return;
+          const cxScreen = artWidth * 0.5;
+          const cyScreen = artHeight * 0.5;
+          const list = params.source === 'trace' ? bonds : restraints;
+          const zoom = params.zoom;
+          const jitter = params.jitter;
+          const intensity = params.intensity;
+          const w = artWidth, h = artHeight;
+          
+          for (let k = 0; k < list.length; k++) {
+              const link = list[k];
+              let weight = link.visualWeight !== undefined ? link.visualWeight : 1.0;
+              if (weight < 0.05) continue;
+
+              const i = link.i, j = link.j;
+              let rx1 = posX[i], ry1 = posY[i], rz1 = posZ[i];
+              let rx2 = posX[j], ry2 = posY[j], rz2 = posZ[j];
+              let x1, y1, z1, x2, y2, z2;
+
+              if (params.plane === 'xz') {
+                  x1 = rx1; y1 = rz1; z1 = ry1; x2 = rx2; y2 = rz2; z2 = ry2;
+              } else if (params.plane === 'yz') {
+                  x1 = ry1; y1 = rz1; z1 = rx1; x2 = ry2; y2 = rz2; z2 = rx2;
+              } else {
+                  x1 = rx1; y1 = ry1; z1 = rz1; x2 = rx2; y2 = ry2; z2 = rz2;
+              }
+
+              const sx1 = x1 * zoom + cxScreen;
+              const sy1 = y1 * zoom + cyScreen;
+              const sx2 = x2 * zoom + cxScreen;
+              const sy2 = y2 * zoom + cyScreen;
+
+              if ((sx1 < 0 && sx2 < 0) || (sx1 > w && sx2 > w) || (sy1 < 0 && sy2 < 0) || (sy1 > h && sy2 > h)) continue;
+
+              const dx2d = sx2 - sx1, dy2d = sy2 - sy1;
+              const dist = Math.hypot(dx2d, dy2d);
+              const steps = Math.max(1, Math.floor(dist));
+              if (steps > 2000) continue; 
+
+              for (let s = 0; s < steps; s++) {
+                  const t = Math.random();
+                  const px = sx1 + dx2d * t + (Math.random() - 0.5) * jitter;
+                  const py = sy1 + dy2d * t + (Math.random() - 0.5) * jitter;
+                  const ix = px | 0, iy = py | 0;
+                  if (ix >= 0 && ix < w && iy >= 0 && iy < h) {
+                      const z = z1 * (1 - t) + z2 * t;
+                      const depthCue = Math.max(0.1, 1.0 + z * 0.05);
+                      const idx = iy * w + ix;
+                      accumulationBuffer[idx] += intensity * depthCue * weight;
+                  }
+              }
+          }
+      }
+
+      onmessage = function (e) {
+          const msg = e.data;
+           if (msg.type === 'init') {
+               const atoms = msg.atoms || [];
+               nAtoms = atoms.length;
+               bonds = msg.bonds || [];
+               restraints = [];
+               if(msg.restraints) restraints = restraints.concat(msg.restraints);
+               
+               artWidth = msg.width; artHeight = msg.height;
+               accumulationBuffer = new Float32Array(artWidth * artHeight);
+               fadeCursor = 0;
+               sentPositions = new Float32Array(nAtoms * 3);
+               sentBuffer = null; 
+
+               posX = new Float32Array(nAtoms); posY = new Float32Array(nAtoms); posZ = new Float32Array(nAtoms);
+               refX = new Float32Array(nAtoms); refY = new Float32Array(nAtoms); refZ = new Float32Array(nAtoms);
+               velX = new Float32Array(nAtoms); velY = new Float32Array(nAtoms); velZ = new Float32Array(nAtoms);
+               forceX = new Float32Array(nAtoms); forceY = new Float32Array(nAtoms); forceZ = new Float32Array(nAtoms);
+               isNucleic = new Int8Array(nAtoms);
+               isGlycan = new Int8Array(nAtoms);
+               masses = new Float32Array(nAtoms);
+               invMasses = new Float32Array(nAtoms);
+
+               for (let i = 0; i < nAtoms; i++) {
+                   const a = atoms[i];
+                   posX[i] = a.x; posY[i] = a.y; posZ[i] = a.z;
+                   refX[i] = a.x; refY[i] = a.y; refZ[i] = a.z;
+                   isNucleic[i] = a.isNucleic ? 1 : 0;
+                   isGlycan[i] = a.isGlycan ? 1 : 0;
+                   masses[i] = a.simMass || 1.0;
+                   invMasses[i] = 1.0 / masses[i];
+               }
+               centerX = 0; centerY = 0; centerZ = 0;
+               stepCount = 0; needsFrame = true; simTime = 0.0;
+               postMessage({ type: 'state', running: isRunning });
+           } else if (msg.type === 'params') {
+               Object.assign(params, msg.data);
+           } else if (msg.type === 'rec_start') {
+               forceHighFPS = true;
+           } else if (msg.type === 'rec_stop') {
+               forceHighFPS = false;
+           } else if (msg.type === 'clear') {
+               if (accumulationBuffer) accumulationBuffer.fill(0);
+               fadeCursor = 0; needsFrame = true; simTime = 0.0;
+           } else if (msg.type === 'resize') {
+               artWidth = msg.width; artHeight = msg.height;
+               accumulationBuffer = new Float32Array(artWidth * artHeight);
+               sentBuffer = null; fadeCursor = 0; needsFrame = true;
+           } else if (msg.type === 'start') {
+               isRunning = true; needsFrame = true; postMessage({ type: 'state', running: true });
+           } else if (msg.type === 'pause') {
+               isRunning = false; needsFrame = true; postMessage({ type: 'state', running: false });
+           } else if (msg.type === 'tick') {
+               if (nAtoms === 0) { postMessage({ type: 'idle' }); return; }
+               const dtInput = msg.dt || 16.6; 
+               if (isRunning) {
+                   const targetSteps = (dtInput * params.speed) / 1.5; 
+                   const substeps = Math.max(1, Math.min(20, Math.round(targetSteps))); 
+                   for (let i = 0; i < substeps; i++) integrate();
+                   needsFrame = true;
+               }
+               if (accumulationBuffer && (isRunning || needsFrame)) {
+                   const userDecay = params.decay !== undefined ? params.decay : 0.98;
+                   if (userDecay < 0.999) fadeAccumulationBuffer(userDecay);
+                   const passes = Math.max(1, Math.round(5 * params.speed));
+                   for (let i = 0; i < passes; i++) accumulateChaos();
+               }
+              for (let i = 0; i < nAtoms; i++) {
+                  const base = i * 3;
+                  sentPositions[base] = posX[i];
+                  sentPositions[base+1] = posY[i];
+                  sentPositions[base+2] = posZ[i];
+              }
+              frameCounter++;
+              const shouldSendImage = forceHighFPS || (frameCounter % displayFrameSkip === 0) || !isRunning || needsFrame;
+              let bufToSend = null;
+              if (shouldSendImage && accumulationBuffer && nAtoms > 0) bufToSend = new Float32Array(accumulationBuffer);
+              if (bufToSend) postMessage({ type: 'update', positions: sentPositions, buffer: bufToSend, time: simTime }, [bufToSend.buffer]);
+              else postMessage({ type: 'update', positions: sentPositions, time: simTime });
+              needsFrame = isRunning;
+           }
+       };
+      `;
+
+      // --------------------------------------------------
+      // MAIN APP LOGIC
+      // --------------------------------------------------
+      
+      const VIEW_PROTEIN_COLORS = [new THREE.Color(0x93c5fd), new THREE.Color(0x6ee7b7), new THREE.Color(0xfbcfe8), new THREE.Color(0xfde68a), new THREE.Color(0xfca5a5)];
+      const VIEW_DNA_COLORS = [new THREE.Color(0xc084fc), new THREE.Color(0x67e8f9), new THREE.Color(0x22d3ee)];
+      const VIEW_GLYCAN_COLORS = [new THREE.Color(0xfba919), new THREE.Color(0xeab308), new THREE.Color(0xd97706)];
+      const VIEW_CHAIN_COLORS = [new THREE.Color(0x93c5fd), new THREE.Color(0xfbcfe8), new THREE.Color(0x6ee7b7), new THREE.Color(0xfde68a), new THREE.Color(0xc084fc), new THREE.Color(0xfca5a5), new THREE.Color(0x67e8f9), new THREE.Color(0xe5e7eb)];
+
+      const RESIDUE_MASSES = {
+        'ALA': 71, 'ARG': 156, 'ASN': 114, 'ASP': 115, 'CYS': 103,
+        'GLN': 128, 'GLU': 129, 'GLY': 57,  'HIS': 137, 'ILE': 113,
+        'LEU': 113, 'LYS': 128, 'MET': 131, 'PHE': 147, 'PRO': 97,
+        'SER': 87,  'THR': 101, 'TRP': 186, 'TYR': 163, 'VAL': 99,
+        'DA': 313, 'DT': 304, 'DG': 329, 'DC': 289,
+        'A': 313, 'T': 304, 'G': 329, 'C': 289, 'U': 306,
+        'NAG': 203, 'MAN': 162, 'BMA': 162, 'FUC': 146, 'GAL': 162, 
+        'GLC': 162, 'SIA': 291, 'NDG': 203, 'FUL': 146,
+        'UNK': 110
+      };
+
+      const GLYCAN_NAMES = new Set(['NAG', 'MAN', 'BMA', 'FUC', 'GAL', 'GLC', 'SIA', 'NDG', 'FUL']);
+
+      const PRESETS = {
+        'editorial-clean': { theme: 'ink', zoom: 45, decay: 98.5, gamma: 1.1, intensity: 45, jitter: 0.2 },
+        'editorial-dark': { theme: 'viridis', zoom: 40, decay: 99.0, gamma: 1.0, intensity: 50, jitter: 0.3 },
+        'blueprint': { theme: 'blueprint', zoom: 50, decay: 97.0, gamma: 0.9, intensity: 60, jitter: 0.1 },
+        'lab': { theme: 'lab', zoom: 45, decay: 98.0, gamma: 1.0, intensity: 50, jitter: 0.2 },
+        'chaos-fire': { theme: 'magma', zoom: 30, decay: 96.0, gamma: 0.8, intensity: 80, jitter: 1.5 },
+        'chaos-gold': { theme: 'gold', zoom: 35, decay: 97.5, gamma: 0.9, intensity: 60, jitter: 1.0 },
+        'sketch': { theme: 'rough', zoom: 40, decay: 92.0, gamma: 1.0, intensity: 70, jitter: 0.8 },
+        'cyber': { theme: 'cyber', zoom: 35, decay: 98.5, gamma: 1.1, intensity: 55, jitter: 0.5 }
+      };
+
+      let worker = null;
+      let state = { isRunning: false, hasStructure: false, hasStarted: false, isLoading: false, workerRunning: false, isRecording: false };
+      let workerTickInFlight = false;
+      let lastFrameTime = 0;
+      let scene, camera, renderer, controls, composer, ssaoPass, bloomPass;
+      let atomMeshes, bondMeshes;
+      const dummy = new THREE.Object3D();
+      const artCanvas = document.getElementById('art-canvas');
+      const artCtx = artCanvas.getContext('2d');
+      const artPanelEl = document.getElementById('art-panel');
+      let artWidth = 3840, artHeight = 2160; 
+      let renderScale = 1.0; 
+      let viewImageData = null;
+      let displayMax = 0.5;
+      const MAX_HISTORY = 40;
+      let historyStack = [];
+      let latestBuffer = null; 
+      let frameCounter = 0;
+      let grainMap = null; 
+      let currentPdbId = "1CDW";
+
+      let recordingMode = 'free'; 
+      const BOOMERANG_FRAMES = 75; 
+      let capturedFrames = []; 
+      let boomerangPhase = 'none'; 
+      let lastReplayTime = 0;
+      let mediaRecorder = null;
+      let recordedChunks = [];
+
+      const ui = {
+          temp: document.getElementById('temp-slider'), tempVal: document.getElementById('temp-val'),
+          k: document.getElementById('k-restraint'), kVal: document.getElementById('k-val'),
+          speed: document.getElementById('sim-speed'), speedVal: document.getElementById('speed-val'),
+          zoom: document.getElementById('art-zoom-control'), zoomVal: document.getElementById('zoom-val'),
+          decay: document.getElementById('art-decay'), decayVal: document.getElementById('decay-val'),
+          gamma: document.getElementById('art-gamma'), gammaVal: document.getElementById('gamma-val'),
+          intensity: document.getElementById('art-intensity'), intensityVal: document.getElementById('intensity-val'), jitter: document.getElementById('art-jitter'),
+          jitterVal: document.getElementById('jitter-val'), theme: document.getElementById('art-theme'),
+          preset: document.getElementById('style-preset'),
+          resToggle: document.getElementById('res-toggle'), 
+          resOptions: document.querySelectorAll('.toggle-option'),
+          loader: document.getElementById('loader'), toggleBtn: document.getElementById('btn-toggle'),
+          statusDot: document.getElementById('sim-status-dot'), statusText: document.getElementById('sim-status-text'),
+          history: document.getElementById('history-slider'), historyCount: document.getElementById('history-count'),
+          plane: document.getElementById('proj-plane'), source: document.getElementById('draw-source'),
+          autoHistoryToggle: document.getElementById('auto-history-toggle'), autoHistoryInterval: document.getElementById('auto-history-interval'),
+          error: document.getElementById('fetch-error'),
+          simTimer: document.getElementById('sim-timer'),
+          recordBtn: document.getElementById('btn-record'),
+          recMenu: document.getElementById('rec-menu'),
+          recProgress: document.getElementById('rec-progress'),
+          viewColorMode: document.getElementById('view-color-mode')
+      };
+
+      // UNION FIND HELPER FOR CLUSTERING
+      class UnionFind {
+          constructor(n) { this.parent = Array.from({length:n}, (_,i)=>i); }
+          find(i) { if(this.parent[i]===i) return i; return this.parent[i]=this.find(this.parent[i]); }
+          union(i,j) { const rootI=this.find(i), rootJ=this.find(j); if(rootI!==rootJ){ this.parent[rootI]=rootJ; return true;} return false; }
+      }
+
+      function init() {
+          setupThreeJS();
+          setupCanvasResolution();
+          bindUI();
+          updateStatusUI();
+          const blob = new Blob([workerCode], {type: 'application/javascript'});
+          worker = new Worker(URL.createObjectURL(blob));
+          worker.onmessage = handleWorkerMessage;
+          requestAnimationFrame(tick);
+          setTimeout(window.fetchPDB, 100);
+      }
+
+      function tick(now) {
+          requestAnimationFrame(tick);
+          
+          if (!lastFrameTime) lastFrameTime = now;
+          const dt = now - lastFrameTime;
+          lastFrameTime = now;
+          
+          if (state.isRecording && recordingMode === 'boomerang' && boomerangPhase === 'reverse') {
+              if (now - lastReplayTime > 33) {
+                  lastReplayTime = now;
+                  const frame = capturedFrames.pop();
+                  const remainingRatio = capturedFrames.length / BOOMERANG_FRAMES; 
+                  const totalProgress = 0.5 + (1.0 - remainingRatio) * 0.5;
+                  ui.recProgress.style.width = (totalProgress * 100) + '%';
+                  if(frame) {
+                      artCtx.putImageData(frame, 0, 0);
+                      const theme = ui.theme.value;
+                      const bg = getThemeBackground(theme);
+                      drawWatermarks(artCtx, artWidth, artHeight, theme, bg);
+                  } else {
+                      if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+                  }
+              }
+              controls.update();
+              return; 
+          }
+
+          if (state.isRecording && recordingMode === 'boomerang' && boomerangPhase === 'forward') {
+               const ratio = capturedFrames.length / BOOMERANG_FRAMES;
+               ui.recProgress.style.width = (ratio * 50) + '%';
+               if (capturedFrames.length >= BOOMERANG_FRAMES) {
+                   boomerangPhase = 'reverse';
+                   lastReplayTime = now; 
+                   return; 
+               }
+          }
+
+          if (worker && state.hasStructure && !workerTickInFlight) {
+              workerTickInFlight = true;
+              worker.postMessage({type: 'tick', dt: dt});
+          }
+          
+          controls.update();
+          if (composer) composer.render(); else renderer.render(scene, camera);
+      }
+
+      // --------------------------------------------------------------------------------
+      // REFACTORED PARSE & LOAD: MST TOPOLOGY + STRICT CHEMICAL ANCHORING
+      // --------------------------------------------------------------------------------
+      window.parseAndLoad = function(txt) {
+          ui.loader.style.display = 'flex'; state.isLoading = true; updateStatusUI();
+          setTimeout(() => {
+              try {
+                  const lines = txt.split('\n');
+                  const nucleic = new Set(['DA','DT','DG','DC','A','T','G','C','U']);
+                  const modelGlycans = document.getElementById('model-glycans').checked;
+
+                  let newAtoms = [];
+                  let linkRecords = []; 
+                  let hasModel = false; let inModel = false;
+
+                  // 1. Parse Atoms and LINKs
+                  for (let l of lines) {
+                      if (l.startsWith('LINK')) {
+                          linkRecords.push({
+                              c1: l[21], r1: l.substring(22, 26).trim(),
+                              c2: l[51], r2: l.substring(52, 56).trim()
+                          });
+                          continue;
+                      }
+
+                      if (l.startsWith('MODEL')) { if (!hasModel) { hasModel = true; inModel = true; continue; } else break; }
+                      if (l.startsWith('ENDMDL')) { if (hasModel) break; continue; }
+                      if (hasModel && !inModel) continue;
+                      
+                      if (l.startsWith('ATOM') || l.startsWith('HETATM')) {
+                          const name = l.substring(12,16).trim();
+                          const res = l.substring(17,20).trim();
+                          const isNuc = nucleic.has(res);
+                          const isGly = GLYCAN_NAMES.has(res);
+                          
+                          if (isGly && !modelGlycans) continue;
+
+                          // Keep CA (Protein), P (DNA), C1 (Glycan)
+                          if ((name === 'CA' && !isNuc && !isGly) || (name === 'P' && isNuc) || (name === 'C1' && isGly)) {
+                              const x = parseFloat(l.substring(30,38));
+                              const y = parseFloat(l.substring(38,46));
+                              const z = parseFloat(l.substring(46,54));
+                              const chain = l[21]; 
+                              const resNum = l.substring(22, 26).trim();
+                              const resName = res.trim().toUpperCase();
+                              let mass = RESIDUE_MASSES[resName] || 110.0;
+                              const simMass = mass / 110.0;
+                              let visualW = isGly ? 0.6 : (0.2 + (mass / 330.0) * 0.8);
+                              if (visualW > 1.0) visualW = 1.0;
+
+                              if (!isNaN(x)) {
+                                  newAtoms.push({ 
+                                    x: x/4, y: y/4, z: z/4, 
+                                    isNucleic: isNuc, isGlycan: isGly,
+                                    resName: resName, isProtein: !isNuc && !isGly, 
+                                    simMass: simMass, visualWeight: visualW, 
+                                    chain: chain, resNum: resNum 
+                                  });
+                              }
+                          }
+                      }
+                  }
+                  if (newAtoms.length < 2) { alert("No atoms found."); return; }
+                  
+                  // Center & Scale
+                  let cx=0, cy=0, cz=0; for (let a of newAtoms) { cx+=a.x; cy+=a.y; cz+=a.z; }
+                  cx /= newAtoms.length; cy /= newAtoms.length; cz /= newAtoms.length;
+                  let maxR = 0;
+                  for (let a of newAtoms) { a.x-=cx; a.y-=cy; a.z-=cz; const r=Math.hypot(a.x, a.y, a.z); if(r>maxR) maxR=r; }
+
+                  window.globalAtoms = newAtoms;
+                  const atomMap = new Map();
+                  newAtoms.forEach((a, i) => atomMap.set(`${a.chain}_${a.resNum}`, i));
+                  const newBonds = [];
+                  const glycanIndices = [];
+                  const proteinIndices = [];
+
+                  newAtoms.forEach((a, i) => {
+                      if (a.isGlycan) glycanIndices.push(i);
+                      if (a.isProtein) proteinIndices.push(i);
+                  });
+
+                  // Initialize UnionFind to track connectivity
+                  const uf = new UnionFind(newAtoms.length);
+
+                  // 2. Backbone Bonds (Linear)
+                  for (let i=0; i<newAtoms.length-1; i++) {
+                      if (newAtoms[i].isGlycan || newAtoms[i+1].isGlycan) continue;
+                      if (newAtoms[i].chain !== newAtoms[i+1].chain) continue;
+                      const dist = Math.hypot(newAtoms[i].x-newAtoms[i+1].x, newAtoms[i].y-newAtoms[i+1].y, newAtoms[i].z-newAtoms[i+1].z);
+                      if (dist < 3.0) { 
+                          newBonds.push({i, j:i+1, visualWeight: (newAtoms[i].visualWeight + newAtoms[i+1].visualWeight)/2});
+                          uf.union(i, i+1);
+                      }
+                  }
+
+                  // 3. LINK Records (Explicit PDB connections - GLYCANS ONLY from LINK records)
+                  // We ONLY connect glycans based on explicit LINK records to avoid
+                  // incorrectly merging separate glycan chains that are spatially close
+                  for (let lnk of linkRecords) {
+                      const idx1 = atomMap.get(`${lnk.c1}_${lnk.r1}`);
+                      const idx2 = atomMap.get(`${lnk.c2}_${lnk.r2}`);
+                      if (idx1 !== undefined && idx2 !== undefined) {
+                          // Only create bonds for LINK records involving glycans
+                          if (newAtoms[idx1].isGlycan || newAtoms[idx2].isGlycan) {
+                              const dist = Math.hypot(newAtoms[idx1].x-newAtoms[idx2].x, newAtoms[idx1].y-newAtoms[idx2].y, newAtoms[idx1].z-newAtoms[idx2].z);
+                              newBonds.push({ i: idx1, j: idx2, visualWeight: 0.6, d: dist });
+                              uf.union(idx1, idx2);
+                          }
+                      }
+                  }
+
+                  // 4. ANCHOR PASS (Restricted Chemical Logic)
+                  // Group glycans by cluster
+                  const glycanClusters = new Map(); // Root -> [AtomIndices]
+                  for (let i of glycanIndices) {
+                      const root = uf.find(i);
+                      if (!glycanClusters.has(root)) glycanClusters.set(root, []);
+                      glycanClusters.get(root).push(i);
+                  }
+
+                  // Iterate over each isolated glycan tree
+                  for (let [root, members] of glycanClusters) {
+                      // Check if this cluster is already attached to a protein
+                      let isAttached = false;
+                      for(let member of members) {
+                          // We check if the root of the member is the same as the root of any protein
+                          // Optimization: Just check if the member is connected to a protein node
+                          // Since we ran UF on everything, we can check if Find(member) == Find(anyProtein)
+                          // A fast way is to check if the root is 'shared' with a protein.
+                          // But since `proteinIndices` is large, we rely on the property that protein atoms are usually all connected (per chain).
+                          // Instead, let's just scan bonds attached to this cluster? 
+                          // Easier: Check if `root` maps to a Set that contains a protein index.
+                          // Let's do a brute force check on one member.
+                          // Or simpler: We track `clusterAttached` state during bond creation? 
+                          // Let's assume floating unless proven otherwise.
+                      }
+                      
+                      // Check attachment via UnionFind check against Protein set
+                      // (Optimized: just check one member against a known protein anchor? No, proteins might be disjoint chains)
+                      // Robust way: Iterate members, check if ANY bond connects to protein.
+                      // We will just re-scan connections.
+                      
+                      // Actually, simpler logic:
+                      // Scan all members. If we find a member that is `NAG/NDG` and close to `ASN/SER/THR`, we consider it a candidate.
+                      // If the cluster is ALREADY linked via LINK records, `uf.find(member)` will equal `uf.find(protein)`.
+                      // But proteins aren't all one cluster (multiple chains).
+                      
+                      // STRATEGY: Attempt to find the BEST ANCHOR for this cluster. 
+                      // If the best anchor distance is very small (< 1.6), it's likely already bonded or should be bonded.
+                      // If the best anchor is essentially a duplicate of an existing bond, we skip.
+                      // But to avoid complexity: We assume missing LINK records means we MUST find an anchor.
+                      
+                      let bestBond = null;
+                      let bestScore = Infinity; // Lower is better
+
+                      for (let g of members) {
+                          const atomG = newAtoms[g];
+                          
+                          // RULE 1: Only NAG, NDG, BMA, MAN can be anchors.
+                          // (GalNAc is often labeled NAG in PDBs, so NAG covers N/O-linked starts usually)
+                          // Standard N-link: NAG. Standard O-link: GalNAc (NAG).
+                          // Exception: Sometimes MAN connects directly in yeast? Rare.
+                          // We allow FUC only as a desperate fallback.
+                          const isRootSugar = (atomG.resName === 'NAG' || atomG.resName === 'NDG' || atomG.resName === 'BMA');
+                          
+                          for (let p of proteinIndices) {
+                              const atomP = newAtoms[p];
+                              const d = Math.hypot(atomG.x-atomP.x, atomG.y-atomP.y, atomG.z-atomP.z);
+                              
+                              // Optimization: Skip far atoms
+                              if (d > 6.0) continue; 
+
+                              // Calculate Score
+                              // Base score = distance
+                              let score = d;
+
+                              // RULE 2: Target Residues (ASN, SER, THR)
+                              const isTargetRes = (atomP.resName === 'ASN' || atomP.resName === 'SER' || atomP.resName === 'THR');
+                              
+                              if (isRootSugar && isTargetRes) {
+                                  score *= 0.01; // Massive Priority to correct chemistry
+                              } else if (isRootSugar) {
+                                  score *= 0.5;  // Priority to correct Sugar type
+                              } else if (isTargetRes) {
+                                  score *= 0.8;  // Slight priority to correct Protein residue
+                              } else {
+                                  score *= 10.0; // Penalty for random sugar-protein contact
+                              }
+
+                              if (score < bestScore) {
+                                  bestScore = score;
+                                  bestBond = { i: g, j: p, d: d };
+                              }
+                          }
+                      }
+
+                      // If we found a bond, we need to ensure we don't double-bond if a LINK existed.
+                      if (bestBond) {
+                          const rootG = uf.find(bestBond.i);
+                          const rootP = uf.find(bestBond.j);
+                          
+                          // Only add if they are NOT ALREADY connected (Floating Island)
+                          if (rootG !== rootP) {
+                              newBonds.push({ i: bestBond.i, j: bestBond.j, visualWeight: 0.6, d: bestBond.d });
+                              uf.union(bestBond.i, bestBond.j);
+                          }
+                      }
+                  }
+
+                  // 5. Restraints
+                  const restraints = buildRestraintsSpatial(newAtoms);
+
+                  const panel = document.getElementById('art-panel');
+                  const panelSpan = Math.min(panel.clientWidth || 100, panel.clientHeight || 100);
+                  const fittedZoom = Math.max(5, Math.min(200, (panelSpan * 0.45) / Math.max(maxR, 0.1)));
+                  ui.zoom.value = Math.round(fittedZoom); ui.zoomVal.textContent = Math.round(fittedZoom);
+
+                  window.globalBonds = newBonds;
+                  if (worker) {
+                      worker.postMessage({
+                          type: 'init',
+                          atoms: newAtoms,
+                          bonds: newBonds,
+                          restraints: restraints, 
+                          width: artWidth,
+                          height: artHeight
+                      });
+                      window.updateWorkerParams();
+                      worker.postMessage({ type: 'pause' });
+                  }
+
+                  if (atomMeshes) { scene.remove(atomMeshes); atomMeshes.geometry.dispose(); atomMeshes.material.dispose(); atomMeshes = null; }
+                  if (bondMeshes) { scene.remove(bondMeshes); bondMeshes.geometry.dispose(); bondMeshes.material.dispose(); bondMeshes = null; }
+                  
+                  const geo = new THREE.SphereGeometry(0.4, 24, 24);
+                  const mat = renderer.flatMaterial.clone();
+                  atomMeshes = new THREE.InstancedMesh(geo, mat, newAtoms.length);
+                  
+                  const bGeo = new THREE.CylinderGeometry(0.1, 0.1, 1, 8); bGeo.rotateX(Math.PI/2);
+                  const bMat = renderer.flatMaterial.clone();
+                  bondMeshes = new THREE.InstancedMesh(bGeo, bMat, newBonds.length);
+                  
+                  scene.add(atomMeshes);
+                  scene.add(bondMeshes);
+
+                  window.update3DColors();
+
+                  for (let i=0; i<newAtoms.length; i++) {
+                      dummy.position.set(newAtoms[i].x, newAtoms[i].y, newAtoms[i].z);
+                      dummy.scale.setScalar(newAtoms[i].visualWeight);
+                      dummy.updateMatrix();
+                      atomMeshes.setMatrixAt(i, dummy.matrix);
+                  }
+                  atomMeshes.instanceMatrix.needsUpdate = true;
+
+                  for (let k=0; k<newBonds.length; k++) {
+                      const mx = (newAtoms[newBonds[k].i].x+newAtoms[newBonds[k].j].x)/2;
+                      const my = (newAtoms[newBonds[k].i].y+newAtoms[newBonds[k].j].y)/2;
+                      const mz = (newAtoms[newBonds[k].i].z+newAtoms[newBonds[k].j].z)/2;
+                      dummy.position.set(mx, my, mz);
+                      dummy.lookAt(newAtoms[newBonds[k].j].x, newAtoms[newBonds[k].j].y, newAtoms[newBonds[k].j].z);
+                      const d = Math.hypot(newAtoms[newBonds[k].i].x-newAtoms[newBonds[k].j].x, newAtoms[newBonds[k].i].y-newAtoms[newBonds[k].j].y, newAtoms[newBonds[k].i].z-newAtoms[newBonds[k].j].z);
+                      dummy.scale.set(1, 1, d);
+                      dummy.updateMatrix();
+                      bondMeshes.setMatrixAt(k, dummy.matrix);
+                  }
+                  bondMeshes.instanceColor.needsUpdate = true;
+                  bondMeshes.instanceMatrix.needsUpdate = true;
+                  
+                  camera.position.set(0,0, Math.max(20, maxR*2.5)); controls.target.set(0,0,0); controls.update();
+                  state.hasStructure = true; state.hasStarted = false; state.isRunning = false; state.workerRunning = false;
+                  updateStatusUI(); window.clearArt(false);
+
+              } catch (e) { console.error(e); alert("Error parsing structure."); } 
+              finally { ui.loader.style.display = 'none'; state.isLoading = false; updateStatusUI(); }
+          }, 100);
+      };
+
+      function buildRestraintsSpatial(newAtoms) {
+          const restraints = [];
+          const cellSize = 5.0; 
+          const maxContact = 12.0; 
+          const maxRange = Math.ceil(maxContact / cellSize);
+
+          const cells = new Map();
+          function getKey(x, y, z) { return `${Math.floor(x/cellSize)},${Math.floor(y/cellSize)},${Math.floor(z/cellSize)}`; }
+          
+          for(let i=0; i<newAtoms.length; i++) {
+              const k = getKey(newAtoms[i].x, newAtoms[i].y, newAtoms[i].z);
+              if(!cells.has(k)) cells.set(k, []);
+              cells.get(k).push(i);
+          }
+          
+          const neighborOffsets = [];
+          for(let x=-maxRange; x<=maxRange; x++)
+            for(let y=-maxRange; y<=maxRange; y++)
+              for(let z=-maxRange; z<=maxRange; z++) neighborOffsets.push([x,y,z]);
+
+          const processedKeys = Array.from(cells.keys());
+          
+          for (let k of processedKeys) {
+              const [cx, cy, cz] = k.split(',').map(Number);
+              const atomsInCell = cells.get(k);
+              
+              for(let off of neighborOffsets) {
+                  const nk = `${cx+off[0]},${cy+off[1]},${cz+off[2]}`;
+                  const neighbors = cells.get(nk);
+                  if(!neighbors) continue;
+                  
+                  for(let i of atomsInCell) {
+                      for(let j of neighbors) {
+                          if(j <= i) continue; 
+                          
+                          if (newAtoms[i].isGlycan || newAtoms[j].isGlycan) continue;
+
+                          const dist = Math.hypot(newAtoms[i].x-newAtoms[j].x, newAtoms[i].y-newAtoms[j].y, newAtoms[i].z-newAtoms[j].z);
+                          
+                          const bothNuc = newAtoms[i].isNucleic && newAtoms[j].isNucleic;
+
+                          if (!bothNuc && dist < 8.0) {
+                              let weight = Math.max(0, 1.0 - (dist / 8.0));
+                              weight = weight * weight; 
+                              const avgW = (newAtoms[i].visualWeight + newAtoms[j].visualWeight) / 2;
+                              if (weight > 0.01) {
+                                  restraints.push({
+                                      i, j, 
+                                      nativeDist: dist, 
+                                      stiffness: weight, 
+                                      visualWeight: avgW * weight 
+                                  });
+                              }
+                          } else if (bothNuc) {
+                              if (dist < 12.0) {
+                                  restraints.push({i, j, nativeDist: dist, strength: 1.0, visualWeight: 0.3});
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+          return restraints;
+      }
+
+      window.applyPreset = (val) => {
+          if (val === 'custom') return;
+          const p = PRESETS[val];
+          if (!p) return;
+          ui.theme.value = p.theme;
+          ui.zoom.value = p.zoom; ui.zoomVal.textContent = p.zoom;
+          ui.decay.value = p.decay; ui.decayVal.textContent = p.decay + "%";
+          ui.gamma.value = p.gamma; ui.gammaVal.textContent = p.gamma.toFixed(2);
+          ui.intensity.value = p.intensity; ui.intensityVal.textContent = p.intensity;
+          ui.jitter.value = p.jitter; ui.jitterVal.textContent = p.jitter;
+          updateArtPanelBackground();
+          window.updateWorkerParams();
+          renderDisplay();
+      };
+      window.toggleRecordMenu = () => { ui.recMenu.style.display = ui.recMenu.style.display === 'flex' ? 'none' : 'flex'; }
+      window.startRecording = (mode) => {
+          if (!artCanvas) return;
+          ui.recMenu.style.display = 'none'; 
+          recordingMode = mode;
+          if (mode === 'boomerang' && artWidth > 2500) { toggleResolution('fast'); alert("Switched to Fast Mode for Boomerang recording."); }
+          capturedFrames = []; boomerangPhase = 'forward';
+          const stream = artCanvas.captureStream(30); 
+          if (!stream) { alert("Browser does not support canvas capture."); return; }
+          const mimeTypes = ['video/webm;codecs=vp9', 'video/webm', 'video/mp4'];
+          let selectedMime = mimeTypes.find(m => MediaRecorder.isTypeSupported(m));
+          if (!selectedMime) { alert("No supported video mime type found."); return; }
+          mediaRecorder = new MediaRecorder(stream, { mimeType: selectedMime, videoBitsPerSecond: 8000000 });
+          recordedChunks = [];
+          mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+          mediaRecorder.onstop = () => {
+              const blob = new Blob(recordedChunks, { type: selectedMime });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              const ext = selectedMime.includes('mp4') ? 'mp4' : 'webm';
+              a.download = `chaos_${currentPdbId}_${ui.theme.value}_${mode}.${ext}`;
+              document.body.appendChild(a); a.click(); document.body.removeChild(a);
+              state.isRecording = false;
+              ui.recordBtn.classList.remove('recording');
+              ui.recordBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>';
+              ui.recProgress.style.width = '0%';
+              if (worker) worker.postMessage({type: 'rec_stop'});
+              capturedFrames = [];
+          };
+          state.isRecording = true;
+          if (worker) worker.postMessage({type: 'rec_start'});
+          mediaRecorder.start();
+          ui.recordBtn.classList.add('recording');
+          ui.recordBtn.innerHTML = '<span class="text-[10px] font-bold">REC</span>';
+          if (mode === 'free') { setTimeout(() => { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }, 5000); }
+      };
+      
+      function handleWorkerMessage(e) {
+          const msg = e.data;
+          if (msg.type === 'state') { state.workerRunning = !!msg.running; updateStatusUI(); return; }
+          if (msg.type === 'idle') { workerTickInFlight = false; return; }
+          if (msg.type === 'update') {
+              workerTickInFlight = false;
+              const pos = msg.positions;
+              const buf = msg.buffer;
+              if (msg.time !== undefined && ui.simTimer) ui.simTimer.innerText = "t: " + msg.time.toFixed(2);
+              frameCounter++;
+              if (buf) {
+                  const isHistoryMode = !ui.history.disabled && (parseInt(ui.history.value) < parseInt(ui.history.max));
+                  if (!isHistoryMode) { latestBuffer = buf; renderDisplay(buf); }
+                  if (state.workerRunning && ui.autoHistoryToggle && ui.autoHistoryToggle.checked) {
+                      const interval = parseInt(ui.autoHistoryInterval.value) || 240;
+                      if (interval > 0 && frameCounter % interval === 0) pushSnapshot(buf);
+                  }
+              }
+              if (atomMeshes && atomMeshes.count === pos.length / 3) {
+                  for (let i = 0; i < atomMeshes.count; i++) {
+                      const x = pos[i*3], y = pos[i*3+1], z = pos[i*3+2];
+                      if (isNaN(x)) dummy.position.set(0, 0, 0); else dummy.position.set(x, y, z);
+                      if (window.globalAtoms && window.globalAtoms[i]) dummy.scale.setScalar(window.globalAtoms[i].visualWeight);
+                      else dummy.scale.set(1,1,1);
+                      dummy.updateMatrix();
+                      atomMeshes.setMatrixAt(i, dummy.matrix);
+                  }
+                  atomMeshes.instanceMatrix.needsUpdate = true;
+                  if (bondMeshes && window.globalBonds) {
+                      for (let k = 0; k < window.globalBonds.length; k++) {
+                          const b = window.globalBonds[k];
+                          const ax = pos[b.i*3], ay = pos[b.i*3+1], az = pos[b.i*3+2];
+                          const bx = pos[b.j*3], by = pos[b.j*3+1], bz = pos[b.j*3+2];
+                          if (isNaN(ax) || isNaN(bx)) continue; 
+                          const dist = Math.hypot(bx-ax, by-ay, bz-az);
+                          dummy.position.set((ax+bx)/2, (ay+by)/2, (az+bz)/2);
+                          dummy.lookAt(bx, by, bz);
+                          dummy.scale.set(1, 1, dist);
+                          dummy.updateMatrix();
+                          bondMeshes.setMatrixAt(k, dummy.matrix);
+                      }
+                      bondMeshes.instanceMatrix.needsUpdate = true;
+                  }
+              }
+          }
+      }
+      
+      // ... (Helper functions for UI, rendering, colors, etc. kept same as before)
+      function renderDisplay(buffer) {
+          const buf = buffer || latestBuffer;
+          if (!buf || !viewImageData) return;
+          let localMax = 0;
+          const stride = Math.floor(buf.length / 3000) || 1; 
+          for(let i=0; i<buf.length; i+=stride) if(buf[i] > localMax) localMax = buf[i];
+          if(localMax > displayMax) displayMax = displayMax * 0.9 + localMax * 0.1; else displayMax = displayMax * 0.99 + localMax * 0.01;
+          if(displayMax < 0.1) displayMax = 0.1;
+          const logDen = Math.log(displayMax + 1);
+          const gamma = parseFloat(ui.gamma.value);
+          const invGamma = 1.0 / (gamma || 1.0);
+          const theme = ui.theme.value;
+          const data = viewImageData.data;
+          const bg = getThemeBackground(theme);
+          const useGrain = (theme === 'rough' || theme === 'charcoal' || theme === 'graphite') && grainMap;
+          for (let i = 0; i < buf.length; i++) {
+              const val = buf[i];
+              const idx = i * 4;
+              let r = bg.r, g = bg.g, b = bg.b;
+              if (val > 0.0) {
+                  let norm = Math.log(val + 1) / logDen;
+                  if (norm < 0) norm = 0; if (norm > 1) norm = 1;
+                  norm = Math.pow(norm, invGamma);
+                  const rgb = applyTheme(theme, norm, bg);
+                  r = rgb.r; g = rgb.g; b = rgb.b;
+              }
+              if (useGrain) { const grain = grainMap[i]; r *= grain; g *= grain; b *= grain; }
+              data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255; 
+          }
+          artCtx.putImageData(viewImageData, 0, 0);
+          if (state.isRecording) {
+              drawWatermarks(artCtx, artWidth, artHeight, theme, bg);
+              if (recordingMode === 'boomerang' && boomerangPhase === 'forward') {
+                  capturedFrames.push(new ImageData(new Uint8ClampedArray(viewImageData.data), viewImageData.width, viewImageData.height));
+              }
+          }
+      }
+      function drawWatermarks(ctx, w, h, theme, bg) {
+          const margin = Math.max(20, Math.round(h * 0.03));
+          ctx.save();
+          const brightness = (bg.r + bg.g + bg.b) / 3;
+          ctx.fillStyle = (brightness > 100) ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)';
+          ctx.font = `bold ${Math.round(h * 0.04)}px 'Inter', sans-serif`;
+          ctx.textAlign = "right"; ctx.textBaseline = "top";
+          ctx.fillText(currentPdbId, w - margin, margin);
+          const accent = '#3b82f6'; 
+          ctx.shadowColor = accent; ctx.shadowBlur = 10;
+          ctx.font = `italic 300 ${Math.round(h * 0.02)}px 'Inter', sans-serif`;
+          ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+          ctx.fillText("ProteinCHAOS", w - margin, h - margin);
+          ctx.restore();
+      }
+      function getThemeBackground(theme) {
+          if (['ink', 'graphite', 'sakura', 'lab', 'editorial', 'rough'].includes(theme)) return {r: 255, g: 255, b: 255};
+          if (theme === 'charcoal') return {r: 30, g: 30, b: 30}; 
+          if (theme === 'heme') return {r: 20, g: 5, b: 5}; 
+          if (theme === 'electrostatic') return {r: 10, g: 10, b: 30}; 
+          if (theme === 'gold') return {r: 20, g: 15, b: 5}; 
+          if (theme === 'viridis') return {r: 68, g: 1, b: 84};
+          if (theme === 'magma') return {r: 15, g: 0, b: 30};
+          if (theme === 'blueprint') return {r: 10, g: 30, b: 80};
+          if (theme === 'bio') return {r: 5, g: 20, b: 5};
+          return {r: 0, g: 0, b: 0};
+      }
+      function applyTheme(theme, t, bg) {
+          let r = 0, g = 0, b = 0;
+          if (theme === 'sunset') { r = t * 255 + Math.sin(t*Math.PI)*50; g = Math.max(0, t - 0.4) * 255; b = Math.max(0, 0.5 - t) * 200 + Math.max(0, t - 0.8) * 255; }
+          else if (theme === 'fire') { r = Math.min(1, t * 2) * 255; g = Math.max(0, t - 0.3) * 300; b = Math.max(0, t - 0.7) * 500; }
+          else if (theme === 'ice') { r = Math.max(0, t - 0.6) * 400; g = t * 200; b = t * 255 + 50; }
+          else if (theme === 'ink') { const val = (1 - t) * 255; r = val; g = val; b = val; }
+          else if (theme === 'rough') { const val = (1 - Math.pow(t, 0.6)) * 200 + 55; r = val; g = val - 10; b = val - 20; }
+          else if (theme === 'charcoal') { const val = bg.r + t * (255 - bg.r); r = val; g = val; b = val; }
+          else if (theme === 'graphite') { const val = (1 - t) * 230 + 25; r = val; g = val; b = val; }
+          else if (theme === 'sakura') { r = 255; g = (1-t) * 180 + 75; b = (1-t) * 190 + 180; }
+          else if (theme === 'lab') { r = (1-t) * 255; g = (1-t) * 255 + t * 240; b = 255; }
+          else if (theme === 'editorial') { if (t < 0.4) { const val = (1 - (t/0.4)) * 200; r=val; g=val; b=val; } else { const val = (t - 0.4) / 0.6; r = val * 255; g=0; b=0; } }
+          else if (theme === 'heme') { const warm = Math.min(1, t * 1.5); r = 26 + warm * 229; g = 5 + warm * 40; b = 5 + warm * 60; }
+          else if (theme === 'electrostatic') { const p = Math.pow(t, 0.9), n = Math.pow(1 - t, 0.8); r = 10 + p * 200; g = 10 + Math.min(245, p * 80 + n * 100); b = 26 + n * 229; }
+          else if (theme === 'blueprint') { const val = bg.r + t * 200; r = Math.min(255, val + 180); g = Math.min(255, val + 180); b = Math.min(255, val + 180); }
+          else if (theme === 'bio') { r = t * 50; g = t * 255; b = t * 80; }
+          else if (theme === 'cyber') { r = t * 255; g = (1-t)*255; b = 255; }
+          else if (theme === 'gold') { r = 15 + t * 240; g = 10 + t * 205; b = t * 100; }
+          else if (theme === 'quantum') { const g = Math.pow(t, 0.6); r = 60 + g * 195; g = 50 + Math.pow(t, 1.2) * 140; b = 160 + g * 95; }
+          else if (theme === 'viridis') { if (t < 0.33) { const lt = t / 0.33; r = 68 + (59-68)*lt; g = 1 + (82-1)*lt; b = 84 + (139-84)*lt; } else if (t < 0.66) { const lt = (t - 0.33) / 0.33; r = 59 + (33-59)*lt; g = 82 + (144-82)*lt; b = 139 + (141-139)*lt; } else { const lt = (t - 0.66) / 0.34; r = 33 + (253-33)*lt; g = 144 + (231-144)*lt; b = 141 + (37-141)*lt; } }
+          else if (theme === 'magma') { if (t < 0.33) { const lt = t / 0.33; r = 15 + (81-15)*lt; g = 0 + (24-0)*lt; b = 30 + (124-30)*lt; } else if (t < 0.66) { const lt = (t - 0.33) / 0.33; r = 81 + (227-81)*lt; g = 24 + (89-24)*lt; b = 124 + (51-124)*lt; } else { const lt = (t - 0.66) / 0.34; r = 227 + (252-227)*lt; g = 89 + (253-89)*lt; b = 51 + (191-51)*lt; } }
+          else { r = t * 100; g = t * 150; b = t * 255; }
+          return {r, g, b};
+      }
+      function setupThreeJS() {
+          const c3d = document.getElementById('canvas-3d');
+          if (renderer) { renderer.dispose(); if (c3d.contains(renderer.domElement)) c3d.removeChild(renderer.domElement); renderer = null; }
+          scene = new THREE.Scene(); scene.background = new THREE.Color(0x12131f); scene.fog = new THREE.Fog(0x12131f, 40, 220);
+          camera = new THREE.PerspectiveCamera(45, c3d.clientWidth / c3d.clientHeight, 0.1, 1000); camera.position.set(0, 0, 60);
+          try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" }); }
+          catch (e) { renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false }); }
+          renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NoToneMapping; 
+          renderer.setSize(c3d.clientWidth, c3d.clientHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          c3d.appendChild(renderer.domElement);
+          controls = new ArcballControls(camera, renderer.domElement, scene); controls.setGizmosVisible(false); controls.enableDamping = true;
+          const ambient = new THREE.AmbientLight(0xffffff, 1.4); scene.add(ambient);
+          renderer.flatMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+          composer = new EffectComposer(renderer);
+          const renderPass = new RenderPass(scene, camera); composer.addPass(renderPass);
+          ssaoPass = new SSAOPass(scene, camera, c3d.clientWidth, c3d.clientHeight);
+          ssaoPass.kernelRadius = 1.5; ssaoPass.minDistance = 0.005; ssaoPass.maxDistance = 0.15; composer.addPass(ssaoPass);
+          bloomPass = new UnrealBloomPass(new THREE.Vector2(c3d.clientWidth, c3d.clientHeight), 0.3, 0.2, 0.85);
+          bloomPass.threshold = 0.6; bloomPass.strength = 0.15; bloomPass.radius = 0.3; composer.addPass(bloomPass);
+          composer.addPass(new OutputPass());
+          window.addEventListener('resize', () => {
+              camera.aspect = c3d.clientWidth / c3d.clientHeight; camera.updateProjectionMatrix();
+              renderer.setSize(c3d.clientWidth, c3d.clientHeight); if (composer) composer.setSize(c3d.clientWidth, c3d.clientHeight);
+          });
+      }
+      function setupCanvasResolution() {
+          const panel = document.getElementById('art-panel');
+          let w = panel.clientWidth || 800; let h = panel.clientHeight || 600;
+          const resMode = ui.resToggle.dataset.state === 'right' ? 'high' : 'fast';
+          let targetHeight = 2160; let scale = 1.0;
+          if (resMode === 'fast') { targetHeight = h; scale = 1.0; } else { targetHeight = 2160; scale = Math.max(1.0, targetHeight / h); }
+          renderScale = scale;
+          artWidth = Math.floor(w * scale); artHeight = Math.floor(h * scale);
+          artWidth = Math.min(artWidth, 7680); artHeight = Math.min(artHeight, 4320);
+          artCanvas.width = artWidth; artCanvas.height = artHeight;
+          viewImageData = new ImageData(artWidth, artHeight);
+          artCanvas.style.opacity = '1';
+          grainMap = new Float32Array(artWidth * artHeight);
+          for (let y = 0; y < artHeight; y++) { for (let x = 0; x < artWidth; x++) { const idx = y * artWidth + x; const v = Math.sin(x * 12.9898 + y * 78.233); grainMap[idx] = 0.9 + ((v - Math.floor(v)) * 0.1); } }
+      }
+      window.toggleResolution = (forceMode) => {
+          const toggle = ui.resToggle;
+          let newState = toggle.dataset.state === 'right' ? 'left' : 'right';
+          if (forceMode) newState = forceMode === 'high' ? 'right' : 'left';
+          toggle.dataset.state = newState;
+          const isHigh = newState === 'right';
+          ui.resOptions[0].classList.toggle('active', !isHigh); ui.resOptions[1].classList.toggle('active', isHigh);
+          updateResolution();
+      }
+      window.updateResolution = () => { setupCanvasResolution(); window.updateWorkerParams(); if(worker) worker.postMessage({ type: 'resize', width: artWidth, height: artHeight }); window.clearArt(false); };
+      window.updateWorkerParams = () => {
+          if (!worker) return;
+          let rawDecay = parseFloat(ui.decay.value);
+          let decayFactor = rawDecay / 100.0; if (rawDecay >= 99.9) decayFactor = 1.0;
+          const scaledZoom = parseFloat(ui.zoom.value) * renderScale;
+          worker.postMessage({
+              type: 'params',
+              data: {
+                  temp: parseFloat(ui.temp.value), k: parseFloat(ui.k.value), speed: parseFloat(ui.speed.value),
+                  zoom: scaledZoom, jitter: parseFloat(ui.jitter.value), intensity: parseFloat(ui.intensity.value),
+                  plane: ui.plane.value, source: ui.source.value, decay: decayFactor
+              }
+          });
+      };
+      window.update3DColors = () => {
+          const mode = ui.viewColorMode.value;
+          if (!atomMeshes || !window.globalAtoms) return;
+          const chainMap = {}; let chainCount = 0; const atomColors = [];
+          for (let i=0; i < window.globalAtoms.length; i++) {
+            const atom = window.globalAtoms[i]; let color;
+            if (mode === 'chain') {
+               if (chainMap[atom.chain] === undefined) chainMap[atom.chain] = chainCount++;
+               color = VIEW_CHAIN_COLORS[chainMap[atom.chain] % VIEW_CHAIN_COLORS.length].clone();
+            } else {
+               let base = atom.isNucleic ? VIEW_DNA_COLORS : (atom.isGlycan ? VIEW_GLYCAN_COLORS : VIEW_PROTEIN_COLORS);
+               color = base[i % base.length].clone();
+            }
+            const final = color.multiplyScalar(atom.visualWeight * 0.5 + 0.5);
+            atomMeshes.setColorAt(i, final); atomColors.push(final);
+          }
+          atomMeshes.instanceColor.needsUpdate = true;
+          if (bondMeshes && window.globalBonds) {
+             for (let k=0; k < window.globalBonds.length; k++) {
+                const b = window.globalBonds[k];
+                const c = atomColors[b.i].clone().lerp(atomColors[b.j], 0.5);
+                bondMeshes.setColorAt(k, c);
+             }
+             bondMeshes.instanceColor.needsUpdate = true;
+          }
+      };
+      window.toggleSim = (forceState) => {
+          if (!state.hasStructure && forceState !== false) { alert("Load or fetch a structure first."); return; }
+          const next = typeof forceState === 'boolean' ? forceState : !state.isRunning;
+          if (state.isLoading && next) return;
+          state.isRunning = next; if (state.isRunning) state.hasStarted = true;
+          if (worker) worker.postMessage({ type: state.isRunning ? 'start' : 'pause' });
+          updateStatusUI();
+      };
+      window.clearArt = (preserveHistory = true) => {
+          if (worker) worker.postMessage({type: 'clear'});
+          displayMax = 1.0; frameCounter = 0; if (latestBuffer) latestBuffer.fill(0);
+          artCtx.clearRect(0, 0, artWidth, artHeight);
+          if (!preserveHistory) { historyStack = []; ui.history.disabled = true; ui.history.value = 0; ui.historyCount.innerText = '0'; }
+          if(ui.simTimer) ui.simTimer.innerText = "t: 0.00"; 
+          renderDisplay();
+      };
+      window.saveSnapshot = () => { if (!latestBuffer) return; pushSnapshot(latestBuffer); };
+      window.pushSnapshot = (srcBuffer) => {
+          if (!srcBuffer) return; const clone = new Float32Array(srcBuffer);
+          historyStack.push(clone); if (historyStack.length > MAX_HISTORY) historyStack.shift();
+          const wasAtEnd = ui.history.disabled || (parseInt(ui.history.value) === parseInt(ui.history.max));
+          ui.history.disabled = false; ui.history.max = historyStack.length - 1;
+          if (wasAtEnd) ui.history.value = historyStack.length - 1;
+          ui.historyCount.innerText = historyStack.length;
+      };
+      ui.history.oninput = (e) => { const idx = parseInt(e.target.value); if (historyStack[idx]) { latestBuffer = new Float32Array(historyStack[idx]); renderDisplay(); } };
+      window.downloadHighRes = () => {
+          const osc = document.createElement('canvas'); osc.width = artWidth; osc.height = artHeight;
+          const ctx = osc.getContext('2d'); const theme = ui.theme.value; const bg = getThemeBackground(theme);
+          ctx.fillStyle = `rgb(${bg.r}, ${bg.g}, ${bg.b})`; ctx.fillRect(0, 0, artWidth, artHeight);
+          ctx.drawImage(artCanvas, 0, 0); drawWatermarks(ctx, artWidth, artHeight, theme, bg);
+          osc.toBlob(blob => {
+              const url = URL.createObjectURL(blob); const a = document.createElement('a');
+              a.download = `chaos_vc_${currentPdbId}_${theme}.png`; a.href = url; a.click();
+          });
+      };
+      window.handleFileUpload = (input) => { 
+          const f = input.files[0]; if (!f) return; 
+          const name = f.name.split('.')[0].toUpperCase().substring(0, 8); currentPdbId = name || "CUSTOM";
+          const r = new FileReader(); r.onload = (e) => window.parseAndLoad(e.target.result); r.readAsText(f); 
+      };
+      window.fetchPDB = async () => {
+          window.toggleSim(false);
+          const id = document.getElementById('pdb-id').value.trim().toUpperCase(); if (!id) return;
+          currentPdbId = id; if(ui.error) ui.error.style.display = 'none';
+          ui.loader.style.display = 'flex'; state.isLoading = true; updateStatusUI();
+          let txt = null;
+          const fetchWithTimeout = (url, ms=5000) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return fetch(url, {signal: c.signal}).then(res => res); };
+          if (id.length === 4) {
+              const urls = [`https://files.rcsb.org/download/${id}.pdb`, `https://files.rcsb.org/view/${id}.pdb`];
+              for (const url of urls) { try { const res = await fetchWithTimeout(url); if (res.ok) { txt = await res.text(); break; } } catch (e) {} }
+          } else {
+              const url = `https://alphafold.ebi.ac.uk/files/AF-${id}-F1-model_v6.pdb`;
+              try { const res = await fetchWithTimeout(url); if (res.ok) txt = await res.text(); } catch(e) {}
+          }
+          if (!txt) {
+              if(ui.error) { ui.error.style.display = 'block'; ui.error.innerText = "Error: ID not found (RCSB or AlphaFold) or network error."; }
+              ui.loader.style.display = 'none'; state.isLoading = false; updateStatusUI(); return; 
+          }
+          window.parseAndLoad(txt);
+      };
+      function updateArtPanelBackground() {
+          if (!artPanelEl) return;
+          const theme = ui.theme.value;
+          const bg = getThemeBackground(theme);
+          artPanelEl.style.background = `rgb(${bg.r}, ${bg.g}, ${bg.b})`;
+      }
+      function updateStatusUI() {
+          const workerActive = state.workerRunning;
+          const status = workerActive ? "Simulating" : state.isLoading ? "Loading" : state.hasStructure ? "Idle" : "Awaiting";
+          ui.statusDot.className = workerActive ? "status-dot status-active" : "status-dot status-idle";
+          ui.statusText.innerText = status;
+          let label = "";
+          if (state.isRunning) label = "Pause Simulation";
+          else if (!state.hasStructure) label = state.isLoading ? "Loading..." : "Load a Structure";
+          else label = state.hasStarted ? "Resume Simulation" : "Start Simulation";
+          ui.toggleBtn.innerText = label;
+          ui.toggleBtn.disabled = state.isLoading || !state.hasStructure;
+          ui.toggleBtn.className = state.isRunning ? "btn btn-danger" : "btn btn-primary";
+          const playIcon = document.getElementById('vp-play-icon');
+          if(playIcon) {
+              if(state.isRunning) playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+              else playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+          }
+      }
+      function bindUI() {
+          const send = () => window.updateWorkerParams();
+          ui.temp.oninput = (e) => { ui.tempVal.textContent = parseFloat(e.target.value).toFixed(2); send(); };
+          ui.k.oninput = (e) => { ui.kVal.textContent = parseFloat(e.target.value).toFixed(1); send(); };
+          ui.speed.oninput = (e) => { ui.speedVal.textContent = parseFloat(e.target.value).toFixed(2) + "x"; send(); };
+          ui.intensity.oninput = (e) => { ui.intensityVal.textContent = e.target.value; send(); };
+          ui.decay.oninput = (e) => { const val = parseFloat(e.target.value); ui.decayVal.textContent = val >= 99.9 ? "INF" : val.toFixed(1) + "%"; send(); };
+          ui.jitter.oninput = (e) => { ui.jitterVal.textContent = e.target.value; send(); };
+          ui.zoom.oninput = (e) => { ui.zoomVal.textContent = e.target.value; send(); window.clearArt(false); };
+          ui.gamma.oninput = (e) => { ui.gammaVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
+          ui.theme.onchange = () => { updateArtPanelBackground(); renderDisplay(); };
+          ui.source.onchange = () => { window.updateWorkerParams(); window.clearArt(false); };
+          ui.plane.onchange = () => { window.updateWorkerParams(); window.clearArt(false); };
+          document.getElementById('pdb-id').addEventListener('input', () => { if(ui.error) ui.error.style.display = 'none'; });
+          updateArtPanelBackground();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
