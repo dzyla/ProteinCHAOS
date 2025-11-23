@@ -31,7 +31,7 @@ ProteinCHAOS is not a molecular dynamics package or structural modeling tool.
 
 * It does not preserve exact bond lengths, angles, or stereochemistry.
 
-* It does not guarantee biological correctness of glycan trees or loop motions.
+* It does not guarantee the biological correctness of glycan trees or loop motions.
 
 It is an artistic engine inspired by structural biology and MD, designed for:
 
@@ -39,8 +39,9 @@ It is an artistic engine inspired by structural biology and MD, designed for:
 
 * Outreach and teaching visuals.
 
-Interactive exploration of “how a protein might move” at a very high level.
+Interactive exploration of "how a protein might move" at a very high level.
 
 <img width="2200" height="886" alt="chaos_vc_8PTU_fire" src="https://github.com/user-attachments/assets/1791419c-f3f2-4e26-9cec-a2c6e576bd36" />
 
 <img width="5781" height="2160" alt="chaos_vc_8UT2_graphite" src="https://github.com/user-attachments/assets/73c2d5e8-c3a5-4a15-bc82-abb040993dee" />
+<img width="2500" height="934" alt="chaos_vc_8UT2_magma" src="https://github.com/user-attachments/assets/4bdfc15d-1d68-4e7d-8f39-b91e0f1d4cfb" />
