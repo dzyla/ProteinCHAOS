@@ -25,7 +25,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>ProteinCHAOS v1.0</title>
+    <title>ProteinCHAOS v1.1</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script type="importmap">
       {
@@ -221,7 +221,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       }
 
       .control-section {
-        padding: 20px 24px;
+        padding: 16px 24px;
         border-bottom: 1px solid var(--panel-border);
       }
       .section-title {
@@ -310,6 +310,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       .btn-secondary:hover { border-color: #71717a; background: #3f3f46; }
       .btn-danger { background: rgba(220, 38, 38, 0.1); color: #f87171; border-color: rgba(220, 38, 38, 0.3); }
       .btn-danger:hover { background: rgba(220, 38, 38, 0.2); border-color: #f87171; }
+      
+      .btn-xs { padding: 4px 8px; font-size: 0.7rem; height: 24px; }
 
       .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 6px; }
       .status-active { background: #10b981; box-shadow: 0 0 8px #10b981; }
@@ -473,15 +475,60 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             <input type="range" id="sim-speed" min="0.1" max="5.0" value="1.0" step="0.1" />
           </div>
         </div>
+        
+        <!-- 3. Camera & Projection (OPTIMIZED) -->
+        <div class="control-section">
+             <div class="section-title">
+               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+               Camera & Projection
+             </div>
+             
+             <div class="flex justify-between gap-2 mb-3">
+                 <button onclick="setCamPreset('front')" class="btn btn-secondary btn-xs flex-1">Front</button>
+                 <button onclick="setCamPreset('top')" class="btn btn-secondary btn-xs flex-1">Top</button>
+                 <button onclick="setCamPreset('side')" class="btn btn-secondary btn-xs flex-1">Side</button>
+             </div>
 
-        <!-- 3. Visuals -->
+             <div class="grid grid-cols-3 gap-2 mb-1">
+                 <div class="slider-container mb-0">
+                     <div class="slider-header"><span class="text-[9px]">Pitch</span></div>
+                     <input type="range" id="cam-rot-x" min="0" max="360" value="0" step="1" />
+                 </div>
+                 <div class="slider-container mb-0">
+                     <div class="slider-header"><span class="text-[9px]">Yaw</span></div>
+                     <input type="range" id="cam-rot-y" min="0" max="360" value="0" step="1" />
+                 </div>
+                 <div class="slider-container mb-0">
+                     <div class="slider-header"><span class="text-[9px]">Roll</span></div>
+                     <input type="range" id="cam-rot-z" min="0" max="360" value="0" step="1" />
+                 </div>
+             </div>
+             
+             <div class="grid grid-cols-2 gap-2 mb-1">
+                 <div class="slider-container">
+                     <div class="slider-header"><span class="text-[9px]">Pan X</span></div>
+                     <input type="range" id="cam-pan-x" min="-400" max="400" value="0" step="1" />
+                 </div>
+                 <div class="slider-container">
+                     <div class="slider-header"><span class="text-[9px]">Pan Y</span></div>
+                     <input type="range" id="cam-pan-y" min="-400" max="400" value="0" step="1" />
+                 </div>
+             </div>
+             
+             <div class="slider-container">
+                <div class="slider-header"><span>Zoom Level</span><span id="zoom-val" class="slider-val">35</span></div>
+                <input type="range" id="art-zoom-control" min="5" max="200" value="35" step="1" />
+             </div>
+        </div>
+
+        <!-- 4. Visuals -->
         <div class="control-section">
           <div class="section-title">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
             </svg>
-            Generative Camera
+            Style Settings
           </div>
           <!-- STYLE PRESET DROPDOWN -->
           <div class="mb-4">
@@ -507,24 +554,33 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             <label class="text-xs text-gray-500 block mb-1">Theme</label>
             <select id="art-theme" class="w-full">
               <option value="sunset" selected>Sunset (Purple/Gold)</option>
-              <option value="fire">Inferno (Black Background)</option>
-              <option value="ice">Glacier (Cyan/Blue)</option>
-              <option value="ink">Sumi-e (Ink/White)</option>
-              <option value="rough">Rough Sketch (Pencil/Paper)</option>
-              <option value="charcoal">Charcoal (Dark Sketch)</option>
-              <option value="graphite">Graphite (Clean Pencil)</option>
-              <option value="sakura">Sakura (Pink/White)</option>
-              <option value="lab">Laboratory (Clinical)</option>
-              <option value="editorial">Editorial (Red/BW)</option>
-              <option value="bio">Biohazard (Green)</option>
-              <option value="blueprint">Blueprint (Tech)</option>
-              <option value="heme">Heme Glow (Deep Red)</option>
-              <option value="electrostatic">Electrostatic Field</option>
-              <option value="cyber">Neon Cyberpunk</option>
-              <option value="gold">Golden Hour</option>
-              <option value="quantum">Quantum Foam</option>
-              <option value="viridis">Viridis (Scientific)</option>
-              <option value="magma">Magma (Scientific)</option>
+              <optgroup label="Chain Colors">
+                  <option value="chain-default">Chain: Default</option>
+                  <option value="chain-spectral">Chain: Spectral</option>
+                  <option value="chain-neon">Chain: Neon</option>
+                  <option value="chain-retro">Chain: Retro</option>
+                  <option value="chain-earth">Chain: Earth</option>
+              </optgroup>
+              <optgroup label="Density / Heatmaps">
+                  <option value="fire">Inferno (Black Background)</option>
+                  <option value="ice">Glacier (Cyan/Blue)</option>
+                  <option value="ink">Sumi-e (Ink/White)</option>
+                  <option value="rough">Rough Sketch (Pencil/Paper)</option>
+                  <option value="charcoal">Charcoal (Dark Sketch)</option>
+                  <option value="graphite">Graphite (Clean Pencil)</option>
+                  <option value="sakura">Sakura (Pink/White)</option>
+                  <option value="lab">Laboratory (Clinical)</option>
+                  <option value="editorial">Editorial (Red/BW)</option>
+                  <option value="bio">Biohazard (Green)</option>
+                  <option value="blueprint">Blueprint (Tech)</option>
+                  <option value="heme">Heme Glow (Deep Red)</option>
+                  <option value="electrostatic">Electrostatic Field</option>
+                  <option value="cyber">Neon Cyberpunk</option>
+                  <option value="gold">Golden Hour</option>
+                  <option value="quantum">Quantum Foam</option>
+                  <option value="viridis">Viridis (Scientific)</option>
+                  <option value="magma">Magma (Scientific)</option>
+              </optgroup>
             </select>
           </div>
 
@@ -538,21 +594,13 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="mb-4">
             <select id="draw-source" class="w-full">
               <option value="trace" selected>Backbone Trace</option>
               <option value="restraints">Elastic Web</option>
             </select>
-            <select id="proj-plane" class="w-full">
-              <option value="xy">Front (XY)</option>
-              <option value="xz">Top (XZ)</option>
-              <option value="yz">Side (YZ)</option>
-            </select>
           </div>
-          <div class="slider-container">
-            <div class="slider-header"><span>Zoom Level</span><span id="zoom-val" class="slider-val">35</span></div>
-            <input type="range" id="art-zoom-control" min="5" max="200" value="35" step="1" />
-          </div>
+          
           <div class="slider-container" title="How quickly old traces fade. High values = long trails.">
             <div class="slider-header"><span>Trace Persistence</span><span id="decay-val" class="slider-val">98%</span></div>
             <input type="range" id="art-decay" min="80" max="100" value="98" step="0.1" />
@@ -571,7 +619,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           </div>
         </div>
 
-        <!-- 4. Data Actions -->
+        <!-- 5. Data Actions -->
         <div class="control-section flex-grow flex flex-col justify-end">
           <div class="flex items-center justify-between mb-3">
             <label class="text-xs text-gray-500 flex items-center gap-2">
@@ -610,8 +658,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           </div>
           <div class="absolute top-4 right-4 pointer-events-auto">
             <select id="view-color-mode" onchange="update3DColors()" class="bg-black/60 backdrop-blur border border-white/10 text-[10px] text-gray-300 rounded px-2 py-1 outline-none cursor-pointer hover:border-blue-500/50 transition-colors">
-              <option value="atom">Color: Atom</option>
               <option value="chain">Color: Chain</option>
+              <option value="atom">Color: Atom</option>
             </select>
           </div>
           
@@ -707,6 +755,9 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       let restraints = []; 
       let drawRestraints = [];
       let accumulationBuffer = null; 
+      let atomColors = null;
+      let colorMode = 'density'; 
+
       let artWidth = 0, artHeight = 0;
       let centerX = 0, centerY = 0, centerZ = 0;
       let stepCount = 0;
@@ -717,9 +768,12 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       let frameCounter = 0;
       let displayFrameSkip = 2;
 
+      // Params with new Camera properties
       let params = {
           temp: 0.4, k: 20.0, speed: 1.0, zoom: 35.0, jitter: 0.8,
-          intensity: 40, plane: 'xy', source: 'trace', decay: 0.98
+          intensity: 40, source: 'trace', decay: 0.98,
+          rotX: 0, rotY: 0, rotZ: 0, panX: 0, panY: 0,
+          colorMode: 'density'
       };
       
       let forceHighFPS = false;
@@ -943,29 +997,60 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           const jitter = params.jitter;
           const intensity = params.intensity;
           const w = artWidth, h = artHeight;
+          const panX = params.panX || 0;
+          const panY = params.panY || 0;
+          const useColor = (colorMode === 'chain' && atomColors);
+          const channels = useColor ? 3 : 1;
+
+          // Rotation Math (Euler X -> Y -> Z)
+          const radX = (params.rotX || 0) * 0.0174533;
+          const radY = (params.rotY || 0) * 0.0174533;
+          const radZ = (params.rotZ || 0) * 0.0174533;
           
+          const cx = Math.cos(radX), sx = Math.sin(radX);
+          const cy = Math.cos(radY), sy = Math.sin(radY);
+          const cz = Math.cos(radZ), sz = Math.sin(radZ);
+
           for (let k = 0; k < list.length; k++) {
               const link = list[k];
               let weight = link.visualWeight !== undefined ? link.visualWeight : 1.0;
-              if (weight < 0.05) continue;
+              // Filter faint restraints to avoid "whole network" mess
+              if (weight < 0.1) continue; 
 
               const i = link.i, j = link.j;
-              let rx1 = posX[i], ry1 = posY[i], rz1 = posZ[i];
-              let rx2 = posX[j], ry2 = posY[j], rz2 = posZ[j];
-              let x1, y1, z1, x2, y2, z2;
+              let x1 = posX[i], y1 = posY[i], z1 = posZ[i];
+              let x2 = posX[j], y2 = posY[j], z2 = posZ[j];
+              
+              // Apply Rotation P1
+              // 1. RotX
+              let ty = y1*cx - z1*sx;
+              let tz = y1*sx + z1*cx;
+              y1 = ty; z1 = tz;
+              // 2. RotY
+              let tx = x1*cy + z1*sy;
+              tz = -x1*sy + z1*cy;
+              x1 = tx; z1 = tz;
+              // 3. RotZ
+              tx = x1*cz - y1*sz;
+              ty = x1*sz + y1*cz;
+              x1 = tx; y1 = ty;
 
-              if (params.plane === 'xz') {
-                  x1 = rx1; y1 = rz1; z1 = ry1; x2 = rx2; y2 = rz2; z2 = ry2;
-              } else if (params.plane === 'yz') {
-                  x1 = ry1; y1 = rz1; z1 = rx1; x2 = ry2; y2 = rz2; z2 = rx2;
-              } else {
-                  x1 = rx1; y1 = ry1; z1 = rz1; x2 = rx2; y2 = ry2; z2 = rz2;
-              }
+              // Apply Rotation P2
+              ty = y2*cx - z2*sx;
+              tz = y2*sx + z2*cx;
+              y2 = ty; z2 = tz;
+              tx = x2*cy + z2*sy;
+              tz = -x2*sy + z2*cy;
+              x2 = tx; z2 = tz;
+              tx = x2*cz - y2*sz;
+              ty = x2*sz + y2*cz;
+              x2 = tx; y2 = ty;
 
-              const sx1 = x1 * zoom + cxScreen;
-              const sy1 = y1 * zoom + cyScreen;
-              const sx2 = x2 * zoom + cxScreen;
-              const sy2 = y2 * zoom + cyScreen;
+              // Project
+              const sx1 = x1 * zoom + cxScreen + panX;
+              const sy1 = y1 * zoom + cyScreen + panY;
+              const sx2 = x2 * zoom + cxScreen + panX;
+              const sy2 = y2 * zoom + cyScreen + panY;
 
               if ((sx1 < 0 && sx2 < 0) || (sx1 > w && sx2 > w) || (sy1 < 0 && sy2 < 0) || (sy1 > h && sy2 > h)) continue;
 
@@ -973,6 +1058,12 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               const dist = Math.hypot(dx2d, dy2d);
               const steps = Math.max(1, Math.floor(dist));
               if (steps > 2000) continue; 
+              
+              let r1, g1, b1, r2, g2, b2;
+              if (useColor) {
+                  r1 = atomColors[i*3]; g1 = atomColors[i*3+1]; b1 = atomColors[i*3+2];
+                  r2 = atomColors[j*3]; g2 = atomColors[j*3+1]; b2 = atomColors[j*3+2];
+              }
 
               for (let s = 0; s < steps; s++) {
                   const t = Math.random();
@@ -982,8 +1073,19 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   if (ix >= 0 && ix < w && iy >= 0 && iy < h) {
                       const z = z1 * (1 - t) + z2 * t;
                       const depthCue = Math.max(0.1, 1.0 + z * 0.05);
-                      const idx = iy * w + ix;
-                      accumulationBuffer[idx] += intensity * depthCue * weight;
+                      const idx = (iy * w + ix) * channels;
+                      
+                      const val = intensity * depthCue * weight;
+                      if (useColor) {
+                          const cr = r1 + (r2-r1)*t;
+                          const cg = g1 + (g2-g1)*t;
+                          const cb = b1 + (b2-b1)*t;
+                          accumulationBuffer[idx] += val * cr;
+                          accumulationBuffer[idx+1] += val * cg;
+                          accumulationBuffer[idx+2] += val * cb;
+                      } else {
+                          accumulationBuffer[idx] += val;
+                      }
                   }
               }
           }
@@ -997,9 +1099,12 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                bonds = msg.bonds || [];
                restraints = [];
                if(msg.restraints) restraints = restraints.concat(msg.restraints);
+               if(msg.colors) atomColors = new Float32Array(msg.colors);
                
                artWidth = msg.width; artHeight = msg.height;
-               accumulationBuffer = new Float32Array(artWidth * artHeight);
+               const channels = (colorMode === 'chain') ? 3 : 1;
+               accumulationBuffer = new Float32Array(artWidth * artHeight * channels);
+               
                fadeCursor = 0;
                sentPositions = new Float32Array(nAtoms * 3);
                sentBuffer = null; 
@@ -1025,7 +1130,16 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                centerX = 0; centerY = 0; centerZ = 0;
                stepCount = 0; needsFrame = true; simTime = 0.0;
                postMessage({ type: 'state', running: isRunning });
+           } else if (msg.type === 'colors') {
+               if(msg.data) atomColors = new Float32Array(msg.data);
+               needsFrame = true;
            } else if (msg.type === 'params') {
+               if (msg.data.colorMode && msg.data.colorMode !== colorMode) {
+                   colorMode = msg.data.colorMode;
+                   const channels = (colorMode === 'chain') ? 3 : 1;
+                   accumulationBuffer = new Float32Array(artWidth * artHeight * channels);
+                   fadeCursor = 0; needsFrame = true;
+               }
                Object.assign(params, msg.data);
            } else if (msg.type === 'rec_start') {
                forceHighFPS = true;
@@ -1036,7 +1150,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                fadeCursor = 0; needsFrame = true; simTime = 0.0;
            } else if (msg.type === 'resize') {
                artWidth = msg.width; artHeight = msg.height;
-               accumulationBuffer = new Float32Array(artWidth * artHeight);
+               const channels = (colorMode === 'chain') ? 3 : 1;
+               accumulationBuffer = new Float32Array(artWidth * artHeight * channels);
                sentBuffer = null; fadeCursor = 0; needsFrame = true;
            } else if (msg.type === 'start') {
                isRunning = true; needsFrame = true; postMessage({ type: 'state', running: true });
@@ -1081,7 +1196,16 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       const VIEW_PROTEIN_COLORS = [new THREE.Color(0x93c5fd), new THREE.Color(0x6ee7b7), new THREE.Color(0xfbcfe8), new THREE.Color(0xfde68a), new THREE.Color(0xfca5a5)];
       const VIEW_DNA_COLORS = [new THREE.Color(0xc084fc), new THREE.Color(0x67e8f9), new THREE.Color(0x22d3ee)];
       const VIEW_GLYCAN_COLORS = [new THREE.Color(0xfba919), new THREE.Color(0xeab308), new THREE.Color(0xd97706)];
-      const VIEW_CHAIN_COLORS = [new THREE.Color(0x93c5fd), new THREE.Color(0xfbcfe8), new THREE.Color(0x6ee7b7), new THREE.Color(0xfde68a), new THREE.Color(0xc084fc), new THREE.Color(0xfca5a5), new THREE.Color(0x67e8f9), new THREE.Color(0xe5e7eb)];
+      
+      const CHAIN_PALETTES = {
+          'default': [new THREE.Color(0x93c5fd), new THREE.Color(0x6ee7b7), new THREE.Color(0xfbcfe8), new THREE.Color(0xfde68a), new THREE.Color(0xc084fc), new THREE.Color(0xfca5a5), new THREE.Color(0x67e8f9), new THREE.Color(0xe5e7eb)],
+          'spectral': [new THREE.Color(0x9e0142), new THREE.Color(0xd53e4f), new THREE.Color(0xf46d43), new THREE.Color(0xfdae61), new THREE.Color(0xfee08b), new THREE.Color(0xe6f598), new THREE.Color(0xabdda4), new THREE.Color(0x66c2a5), new THREE.Color(0x3288bd), new THREE.Color(0x5e4fa2)],
+          'neon': [new THREE.Color(0xff00ff), new THREE.Color(0x00ffff), new THREE.Color(0xffff00), new THREE.Color(0xff0000), new THREE.Color(0x00ff00), new THREE.Color(0x0000ff)],
+          'retro': [new THREE.Color(0x264653), new THREE.Color(0x2a9d8f), new THREE.Color(0xe9c46a), new THREE.Color(0xf4a261), new THREE.Color(0xe76f51)],
+          'earth': [new THREE.Color(0x582f0e), new THREE.Color(0x7f4f24), new THREE.Color(0x936639), new THREE.Color(0xa68a64), new THREE.Color(0xb6ad90), new THREE.Color(0xc2c5aa), new THREE.Color(0xa4ac86), new THREE.Color(0x656d4a)]
+      };
+      
+      let VIEW_CHAIN_COLORS = CHAIN_PALETTES['default'];
 
       const RESIDUE_MASSES = {
         'ALA': 71, 'ARG': 156, 'ASN': 114, 'ASP': 115, 'CYS': 103,
@@ -1152,14 +1276,20 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           loader: document.getElementById('loader'), toggleBtn: document.getElementById('btn-toggle'),
           statusDot: document.getElementById('sim-status-dot'), statusText: document.getElementById('sim-status-text'),
           history: document.getElementById('history-slider'), historyCount: document.getElementById('history-count'),
-          plane: document.getElementById('proj-plane'), source: document.getElementById('draw-source'),
+          source: document.getElementById('draw-source'),
           autoHistoryToggle: document.getElementById('auto-history-toggle'), autoHistoryInterval: document.getElementById('auto-history-interval'),
           error: document.getElementById('fetch-error'),
           simTimer: document.getElementById('sim-timer'),
           recordBtn: document.getElementById('btn-record'),
           recMenu: document.getElementById('rec-menu'),
           recProgress: document.getElementById('rec-progress'),
-          viewColorMode: document.getElementById('view-color-mode')
+          viewColorMode: document.getElementById('view-color-mode'),
+          // Camera Controls
+          rotX: document.getElementById('cam-rot-x'),
+          rotY: document.getElementById('cam-rot-y'),
+          rotZ: document.getElementById('cam-rot-z'),
+          panX: document.getElementById('cam-pan-x'),
+          panY: document.getElementById('cam-pan-y')
       };
 
       // UNION FIND HELPER FOR CLUSTERING
@@ -1350,61 +1480,20 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
 
                   // Iterate over each isolated glycan tree
                   for (let [root, members] of glycanClusters) {
-                      // Check if this cluster is already attached to a protein
-                      let isAttached = false;
-                      for(let member of members) {
-                          // We check if the root of the member is the same as the root of any protein
-                          // Optimization: Just check if the member is connected to a protein node
-                          // Since we ran UF on everything, we can check if Find(member) == Find(anyProtein)
-                          // A fast way is to check if the root is 'shared' with a protein.
-                          // But since `proteinIndices` is large, we rely on the property that protein atoms are usually all connected (per chain).
-                          // Instead, let's just scan bonds attached to this cluster? 
-                          // Easier: Check if `root` maps to a Set that contains a protein index.
-                          // Let's do a brute force check on one member.
-                          // Or simpler: We track `clusterAttached` state during bond creation? 
-                          // Let's assume floating unless proven otherwise.
-                      }
-                      
-                      // Check attachment via UnionFind check against Protein set
-                      // (Optimized: just check one member against a known protein anchor? No, proteins might be disjoint chains)
-                      // Robust way: Iterate members, check if ANY bond connects to protein.
-                      // We will just re-scan connections.
-                      
-                      // Actually, simpler logic:
-                      // Scan all members. If we find a member that is `NAG/NDG` and close to `ASN/SER/THR`, we consider it a candidate.
-                      // If the cluster is ALREADY linked via LINK records, `uf.find(member)` will equal `uf.find(protein)`.
-                      // But proteins aren't all one cluster (multiple chains).
-                      
-                      // STRATEGY: Attempt to find the BEST ANCHOR for this cluster. 
-                      // If the best anchor distance is very small (< 1.6), it's likely already bonded or should be bonded.
-                      // If the best anchor is essentially a duplicate of an existing bond, we skip.
-                      // But to avoid complexity: We assume missing LINK records means we MUST find an anchor.
-                      
                       let bestBond = null;
                       let bestScore = Infinity; // Lower is better
 
                       for (let g of members) {
                           const atomG = newAtoms[g];
-                          
-                          // RULE 1: Only NAG, NDG, BMA, MAN can be anchors.
-                          // (GalNAc is often labeled NAG in PDBs, so NAG covers N/O-linked starts usually)
-                          // Standard N-link: NAG. Standard O-link: GalNAc (NAG).
-                          // Exception: Sometimes MAN connects directly in yeast? Rare.
-                          // We allow FUC only as a desperate fallback.
                           const isRootSugar = (atomG.resName === 'NAG' || atomG.resName === 'NDG' || atomG.resName === 'BMA');
                           
                           for (let p of proteinIndices) {
                               const atomP = newAtoms[p];
                               const d = Math.hypot(atomG.x-atomP.x, atomG.y-atomP.y, atomG.z-atomP.z);
                               
-                              // Optimization: Skip far atoms
                               if (d > 6.0) continue; 
 
-                              // Calculate Score
-                              // Base score = distance
                               let score = d;
-
-                              // RULE 2: Target Residues (ASN, SER, THR)
                               const isTargetRes = (atomP.resName === 'ASN' || atomP.resName === 'SER' || atomP.resName === 'THR');
                               
                               if (isRootSugar && isTargetRes) {
@@ -1437,8 +1526,22 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                       }
                   }
 
-                  // 5. Restraints
+                  // 5. Restraints & Colors
                   const restraints = buildRestraintsSpatial(newAtoms);
+                  
+                  // Use DEFAULT palette for initialization
+                  const palette = CHAIN_PALETTES['default'];
+                  const chainMap = {}; let chainCount = 0;
+                  const colorArray = new Float32Array(newAtoms.length * 3);
+                  
+                  for(let i=0; i<newAtoms.length; i++) {
+                      const atom = newAtoms[i];
+                      if(chainMap[atom.chain] === undefined) chainMap[atom.chain] = chainCount++;
+                      const color = palette[chainMap[atom.chain] % palette.length];
+                      colorArray[i*3] = color.r;
+                      colorArray[i*3+1] = color.g;
+                      colorArray[i*3+2] = color.b;
+                  }
 
                   const panel = document.getElementById('art-panel');
                   const panelSpan = Math.min(panel.clientWidth || 100, panel.clientHeight || 100);
@@ -1452,6 +1555,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                           atoms: newAtoms,
                           bonds: newBonds,
                           restraints: restraints, 
+                          colors: colorArray,
                           width: artWidth,
                           height: artHeight
                       });
@@ -1549,7 +1653,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
 
                           if (!bothNuc && dist < 8.0) {
                               let weight = Math.max(0, 1.0 - (dist / 8.0));
-                              weight = weight * weight; 
+                              weight = weight * weight * weight; // OPTIMIZED: STEEPER CURVE TO HIDE WEAK LINKS
                               const avgW = (newAtoms[i].visualWeight + newAtoms[j].visualWeight) / 2;
                               if (weight > 0.01) {
                                   restraints.push({
@@ -1585,6 +1689,22 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           window.updateWorkerParams();
           renderDisplay();
       };
+      
+      window.setCamPreset = (view) => {
+          if (view === 'front') {
+             ui.rotX.value = 0; ui.rotY.value = 0; ui.rotZ.value = 0;
+             ui.panX.value = 0; ui.panY.value = 0;
+          } else if (view === 'top') {
+             ui.rotX.value = 90; ui.rotY.value = 0; ui.rotZ.value = 0;
+             ui.panX.value = 0; ui.panY.value = 0;
+          } else if (view === 'side') {
+             ui.rotX.value = 0; ui.rotY.value = 90; ui.rotZ.value = 0;
+             ui.panX.value = 0; ui.panY.value = 0;
+          }
+          window.updateWorkerParams();
+          window.clearArt(false);
+      };
+
       window.toggleRecordMenu = () => { ui.recMenu.style.display = ui.recMenu.style.display === 'flex' ? 'none' : 'flex'; }
       window.startRecording = (mode) => {
           if (!artCanvas) return;
@@ -1674,32 +1794,83 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       function renderDisplay(buffer) {
           const buf = buffer || latestBuffer;
           if (!buf || !viewImageData) return;
-          let localMax = 0;
-          const stride = Math.floor(buf.length / 3000) || 1; 
-          for(let i=0; i<buf.length; i+=stride) if(buf[i] > localMax) localMax = buf[i];
-          if(localMax > displayMax) displayMax = displayMax * 0.9 + localMax * 0.1; else displayMax = displayMax * 0.99 + localMax * 0.01;
-          if(displayMax < 0.1) displayMax = 0.1;
-          const logDen = Math.log(displayMax + 1);
-          const gamma = parseFloat(ui.gamma.value);
-          const invGamma = 1.0 / (gamma || 1.0);
+          
+          const isRGB = buf.length === viewImageData.width * viewImageData.height * 3;
           const theme = ui.theme.value;
           const data = viewImageData.data;
           const bg = getThemeBackground(theme);
-          const useGrain = (theme === 'rough' || theme === 'charcoal' || theme === 'graphite') && grainMap;
-          for (let i = 0; i < buf.length; i++) {
-              const val = buf[i];
-              const idx = i * 4;
-              let r = bg.r, g = bg.g, b = bg.b;
-              if (val > 0.0) {
-                  let norm = Math.log(val + 1) / logDen;
-                  if (norm < 0) norm = 0; if (norm > 1) norm = 1;
-                  norm = Math.pow(norm, invGamma);
-                  const rgb = applyTheme(theme, norm, bg);
-                  r = rgb.r; g = rgb.g; b = rgb.b;
+          
+          // 1. Unified Auto-Exposure Calculation
+          let localMax = 0;
+          const step = isRGB ? 3 : 1;
+          const stride = (Math.floor(buf.length / 3000) || 1) * step; 
+          
+          for(let i=0; i<buf.length; i+=stride) {
+              let val = buf[i];
+              if (isRGB) {
+                  // For RGB, approximate intensity with the strongest channel
+                  val = Math.max(buf[i], buf[i+1], buf[i+2]);
               }
-              if (useGrain) { const grain = grainMap[i]; r *= grain; g *= grain; b *= grain; }
-              data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255; 
+              if(val > localMax) localMax = val;
           }
+
+          if(localMax > displayMax) displayMax = displayMax * 0.9 + localMax * 0.1; 
+          else displayMax = displayMax * 0.99 + localMax * 0.01;
+          if(displayMax < 0.1) displayMax = 0.1;
+          
+          const logDen = Math.log(displayMax + 1);
+          const gamma = parseFloat(ui.gamma.value);
+          const invGamma = 1.0 / (Math.max(0.01, gamma));
+
+          if (!isRGB) {
+              const useGrain = (theme === 'rough' || theme === 'charcoal' || theme === 'graphite') && grainMap;
+              
+              for (let i = 0; i < buf.length; i++) {
+                  const val = buf[i];
+                  const idx = i * 4;
+                  let r = bg.r, g = bg.g, b = bg.b;
+                  if (val > 0.0) {
+                      let norm = Math.log(val + 1) / logDen;
+                      if (norm < 0) norm = 0; if (norm > 1) norm = 1;
+                      norm = Math.pow(norm, invGamma);
+                      const rgb = applyTheme(theme, norm, bg);
+                      r = rgb.r; g = rgb.g; b = rgb.b;
+                  }
+                  if (useGrain) { const grain = grainMap[i]; r *= grain; g *= grain; b *= grain; }
+                  data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255; 
+              }
+          } else {
+              // RGB Mode (Chain) - Improved Tone Mapping
+              const len = buf.length / 3;
+              
+              for (let i = 0; i < len; i++) {
+                  let rVal = buf[i*3];
+                  let gVal = buf[i*3+1];
+                  let bVal = buf[i*3+2];
+                  const idx = i * 4;
+                  
+                  // Apply Log Compression (Auto-Exposure)
+                  rVal = Math.log(rVal + 1) / logDen;
+                  gVal = Math.log(gVal + 1) / logDen;
+                  bVal = Math.log(bVal + 1) / logDen;
+                  
+                  // Clamp 0-1
+                  if (rVal > 1) rVal = 1; if (rVal < 0) rVal = 0;
+                  if (gVal > 1) gVal = 1; if (gVal < 0) gVal = 0;
+                  if (bVal > 1) bVal = 1; if (bVal < 0) bVal = 0;
+
+                  // Apply Gamma
+                  rVal = Math.pow(rVal, invGamma);
+                  gVal = Math.pow(gVal, invGamma);
+                  bVal = Math.pow(bVal, invGamma);
+                  
+                  data[idx] = rVal * 255; 
+                  data[idx+1] = gVal * 255; 
+                  data[idx+2] = bVal * 255; 
+                  data[idx+3] = 255;
+              }
+          }
+          
           artCtx.putImageData(viewImageData, 0, 0);
           if (state.isRecording) {
               drawWatermarks(artCtx, artWidth, artHeight, theme, bg);
@@ -1733,6 +1904,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (theme === 'magma') return {r: 15, g: 0, b: 30};
           if (theme === 'blueprint') return {r: 10, g: 30, b: 80};
           if (theme === 'bio') return {r: 5, g: 20, b: 5};
+          // Chain theme default black bg
           return {r: 0, g: 0, b: 0};
       }
       function applyTheme(theme, t, bg) {
@@ -1814,12 +1986,18 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           let rawDecay = parseFloat(ui.decay.value);
           let decayFactor = rawDecay / 100.0; if (rawDecay >= 99.9) decayFactor = 1.0;
           const scaledZoom = parseFloat(ui.zoom.value) * renderScale;
+          let cmode = 'density';
+          if (ui.theme.value.startsWith('chain')) cmode = 'chain';
+
           worker.postMessage({
               type: 'params',
               data: {
                   temp: parseFloat(ui.temp.value), k: parseFloat(ui.k.value), speed: parseFloat(ui.speed.value),
                   zoom: scaledZoom, jitter: parseFloat(ui.jitter.value), intensity: parseFloat(ui.intensity.value),
-                  plane: ui.plane.value, source: ui.source.value, decay: decayFactor
+                  source: ui.source.value, decay: decayFactor,
+                  rotX: parseFloat(ui.rotX.value), rotY: parseFloat(ui.rotY.value), rotZ: parseFloat(ui.rotZ.value),
+                  panX: parseFloat(ui.panX.value) * renderScale, panY: parseFloat(ui.panY.value) * renderScale,
+                  colorMode: cmode
               }
           });
       };
@@ -1827,11 +2005,19 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           const mode = ui.viewColorMode.value;
           if (!atomMeshes || !window.globalAtoms) return;
           const chainMap = {}; let chainCount = 0; const atomColors = [];
+          
+          // Determine current chain palette for 3D view consistency
+          let currentChainPalette = CHAIN_PALETTES['default'];
+          if (ui.theme.value.startsWith('chain')) {
+              const key = ui.theme.value.split('-')[1];
+              if (CHAIN_PALETTES[key]) currentChainPalette = CHAIN_PALETTES[key];
+          }
+
           for (let i=0; i < window.globalAtoms.length; i++) {
             const atom = window.globalAtoms[i]; let color;
             if (mode === 'chain') {
                if (chainMap[atom.chain] === undefined) chainMap[atom.chain] = chainCount++;
-               color = VIEW_CHAIN_COLORS[chainMap[atom.chain] % VIEW_CHAIN_COLORS.length].clone();
+               color = currentChainPalette[chainMap[atom.chain] % currentChainPalette.length].clone();
             } else {
                let base = atom.isNucleic ? VIEW_DNA_COLORS : (atom.isGlycan ? VIEW_GLYCAN_COLORS : VIEW_PROTEIN_COLORS);
                color = base[i % base.length].clone();
@@ -1934,6 +2120,34 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               else playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
           }
       }
+      
+      function updateChainColors() {
+          if (!window.globalAtoms) return;
+          const theme = ui.theme.value;
+          if (!theme.startsWith('chain')) return;
+          
+          const key = theme.split('-')[1];
+          const palette = CHAIN_PALETTES[key] || CHAIN_PALETTES['default'];
+          
+          // Update global palette reference for consistency
+          VIEW_CHAIN_COLORS = palette; 
+          
+          const chainMap = {}; let chainCount = 0;
+          const colorArray = new Float32Array(window.globalAtoms.length * 3);
+          
+          for(let i=0; i<window.globalAtoms.length; i++) {
+              const atom = window.globalAtoms[i];
+              if(chainMap[atom.chain] === undefined) chainMap[atom.chain] = chainCount++;
+              const color = palette[chainMap[atom.chain] % palette.length];
+              colorArray[i*3] = color.r;
+              colorArray[i*3+1] = color.g;
+              colorArray[i*3+2] = color.b;
+          }
+          
+          if (worker) worker.postMessage({ type: 'colors', data: colorArray });
+          update3DColors();
+      }
+
       function bindUI() {
           const send = () => window.updateWorkerParams();
           ui.temp.oninput = (e) => { ui.tempVal.textContent = parseFloat(e.target.value).toFixed(2); send(); };
@@ -1944,10 +2158,22 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           ui.jitter.oninput = (e) => { ui.jitterVal.textContent = e.target.value; send(); };
           ui.zoom.oninput = (e) => { ui.zoomVal.textContent = e.target.value; send(); window.clearArt(false); };
           ui.gamma.oninput = (e) => { ui.gammaVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
-          ui.theme.onchange = () => { updateArtPanelBackground(); renderDisplay(); };
+          
+          ui.theme.onchange = () => { 
+              updateArtPanelBackground(); 
+              window.updateWorkerParams(); // Switch mode
+              if (ui.theme.value.startsWith('chain')) updateChainColors(); // Update palette
+              window.clearArt(false);
+          };
           ui.source.onchange = () => { window.updateWorkerParams(); window.clearArt(false); };
-          ui.plane.onchange = () => { window.updateWorkerParams(); window.clearArt(false); };
+          
           document.getElementById('pdb-id').addEventListener('input', () => { if(ui.error) ui.error.style.display = 'none'; });
+          
+          // Camera Bindings
+          const updateCam = () => { window.updateWorkerParams(); window.clearArt(false); };
+          ui.rotX.oninput = updateCam; ui.rotY.oninput = updateCam; ui.rotZ.oninput = updateCam;
+          ui.panX.oninput = updateCam; ui.panY.oninput = updateCam;
+          
           updateArtPanelBackground();
       }
 
