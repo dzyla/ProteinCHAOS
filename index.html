@@ -1679,7 +1679,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                       uniqueChains.forEach(ch => {
                           const hex = window.chainColors[ch];
                           html += `<div class="flex items-center gap-2 mb-1">
-                              <input type="color" value="${hex}" oninput="updateChainColor('${ch}', this.value)"
+                              <input type="color" value="${hex}" onchange="updateChainColor('${ch}', this.value)"
                                      style="width:24px;height:24px;border:none;background:none;padding:0;cursor:pointer;border-radius:4px;">
                               <span class="text-xs text-gray-300 font-mono">Chain ${ch}</span>
                               <span class="text-[10px] text-gray-500 ml-auto">${chainCounts[ch]} res</span>
@@ -1710,12 +1710,15 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                           type: 'init',
                           atoms: newAtoms,
                           bonds: newBonds,
-                          restraints: restraints, 
+                          restraints: restraints,
                           colors: colorArray,
                           width: artWidth,
                           height: artHeight
                       });
                       window.updateWorkerParams();
+                      // If color mode is residue, override initial chain-colors with correct mode colors
+                      const initCM = document.getElementById('art-color-mode')?.value;
+                      if (initCM === 'residue') rebuildColorArray();
                       worker.postMessage({ type: 'pause' });
                   }
 
@@ -2339,7 +2342,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
 
       function rebuildColorArray() {
           if (!window.globalAtoms) return;
-          const cMode = document.getElementById('art-color-mode')?.value || 'chain';
+          const cMode = document.getElementById('art-color-mode')?.value || 'density';
           const colorArray = new Float32Array(window.globalAtoms.length * 3);
           for (let i = 0; i < window.globalAtoms.length; i++) {
               const atom = window.globalAtoms[i];
@@ -2386,10 +2389,32 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           ui.zoom.oninput = (e) => { ui.zoomVal.textContent = e.target.value; send(); window.clearArt(false); };
           ui.gamma.oninput = (e) => { ui.gammaVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
           
-          ui.theme.onchange = () => { 
-              updateArtPanelBackground(); 
+          ui.theme.onchange = () => {
+              updateArtPanelBackground();
               window.updateWorkerParams(); // Switch mode
-              if (ui.theme.value.startsWith('chain')) updateChainColors(); // Update palette
+              if (ui.theme.value.startsWith('chain') && window.globalAtoms) {
+                  // Load this palette's colors into per-chain pickers
+                  const paletteKey = ui.theme.value.replace('chain-', '');
+                  const palette = CHAIN_PALETTES[paletteKey] || CHAIN_PALETTES['default'];
+                  const uniqueChains = [...new Set(window.globalAtoms.map(a => a.chain))].sort();
+                  uniqueChains.forEach((ch, idx) => {
+                      const c = palette[idx % palette.length];
+                      const hex = '#'
+                          + Math.round(c.r*255).toString(16).padStart(2,'0')
+                          + Math.round(c.g*255).toString(16).padStart(2,'0')
+                          + Math.round(c.b*255).toString(16).padStart(2,'0');
+                      window.chainColors[ch] = hex;
+                  });
+                  // Sync picker inputs to new colors
+                  const chainSection = document.getElementById('chain-color-section');
+                  if (chainSection) {
+                      chainSection.querySelectorAll('input[type="color"]').forEach((input, idx) => {
+                          const ch = uniqueChains[idx];
+                          if (ch) input.value = window.chainColors[ch];
+                      });
+                  }
+                  rebuildColorArray();
+              }
               window.clearArt(false);
           };
           ui.source.onchange = () => { window.updateWorkerParams(); window.clearArt(false); };
