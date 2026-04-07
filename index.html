@@ -1845,6 +1845,12 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       }
       
       // ... (Helper functions for UI, rendering, colors, etc. kept same as before)
+      function acesToneMap(x) {
+          // ACES fitted curve (Hill 2015) — richer shadows, graceful highlight roll-off
+          if (x <= 0) return 0;
+          const v = (x*(2.51*x+0.03)) / (x*(2.43*x+0.59)+0.14);
+          return v < 0 ? 0 : v > 1 ? 1 : v;
+      }
       function renderDisplay(buffer) {
           const buf = buffer || latestBuffer;
           if (!buf || !viewImageData) return;
@@ -1872,7 +1878,6 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           else displayMax = displayMax * 0.99 + localMax * 0.01;
           if(displayMax < 0.1) displayMax = 0.1;
           
-          const logDen = Math.log(displayMax + 1);
           const gamma = parseFloat(ui.gamma.value);
           const invGamma = 1.0 / (Math.max(0.01, gamma));
 
@@ -1884,8 +1889,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   const idx = i * 4;
                   let r = bg.r, g = bg.g, b = bg.b;
                   if (val > 0.0) {
-                      let norm = Math.log(val + 1) / logDen;
-                      if (norm < 0) norm = 0; if (norm > 1) norm = 1;
+                      let norm = acesToneMap(val / displayMax);
                       norm = Math.pow(norm, invGamma);
                       const rgb = applyTheme(theme, norm, bg);
                       r = rgb.r; g = rgb.g; b = rgb.b;
@@ -1903,20 +1907,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   let bVal = buf[i*3+2];
                   const idx = i * 4;
                   
-                  // Apply Log Compression (Auto-Exposure)
-                  rVal = Math.log(rVal + 1) / logDen;
-                  gVal = Math.log(gVal + 1) / logDen;
-                  bVal = Math.log(bVal + 1) / logDen;
-                  
-                  // Clamp 0-1
-                  if (rVal > 1) rVal = 1; if (rVal < 0) rVal = 0;
-                  if (gVal > 1) gVal = 1; if (gVal < 0) gVal = 0;
-                  if (bVal > 1) bVal = 1; if (bVal < 0) bVal = 0;
-
-                  // Apply Gamma
-                  rVal = Math.pow(rVal, invGamma);
-                  gVal = Math.pow(gVal, invGamma);
-                  bVal = Math.pow(bVal, invGamma);
+                  // ACES tone mapping + gamma
+                  rVal = Math.pow(acesToneMap(rVal / displayMax), invGamma);
+                  gVal = Math.pow(acesToneMap(gVal / displayMax), invGamma);
+                  bVal = Math.pow(acesToneMap(bVal / displayMax), invGamma);
                   
                   data[idx] = rVal * 255; 
                   data[idx+1] = gVal * 255; 
