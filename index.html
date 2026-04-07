@@ -1910,9 +1910,9 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                       const lum = (r + g + b) / 765.0;
                       const gs = 1.0 - lum * 0.75; // full grain in dark, 25% in bright
                       const grain = 0.88 + rawG * 0.12 * gs;
-                      r = Math.min(255, r * grain);
-                      g = Math.min(255, g * grain);
-                      b = Math.min(255, b * grain);
+                      r = r * grain;
+                      g = g * grain;
+                      b = b * grain;
                   }
                   data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255; 
               }
@@ -1944,6 +1944,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           const bloomVal = ui.bloom ? parseFloat(ui.bloom.value) : 0;
           if (bloomVal > 0.005 && bloomCanvas) {
               const bpx = Math.max(1, Math.round(bloomCanvas.width / 64));
+              bloomCtx.clearRect(0, 0, bloomCanvas.width, bloomCanvas.height);
               bloomCtx.filter = `blur(${bpx}px)`;
               bloomCtx.drawImage(artCanvas, 0, 0, bloomCanvas.width, bloomCanvas.height);
               bloomCtx.filter = 'none';
@@ -1957,7 +1958,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (state.isRecording) {
               drawWatermarks(artCtx, artWidth, artHeight, theme, bg);
               if (recordingMode === 'boomerang' && boomerangPhase === 'forward') {
-                  capturedFrames.push(new ImageData(new Uint8ClampedArray(viewImageData.data), viewImageData.width, viewImageData.height));
+                  const snapData = artCtx.getImageData(0, 0, artWidth, artHeight);
+                  capturedFrames.push(snapData);
               }
           }
       }
