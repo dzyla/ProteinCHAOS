@@ -781,6 +781,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       };
 
       let forceHighFPS = false;
+      let wcaRebuildTick = 0;
 
       function initNoiseCache() {
           noiseCache = new Float32Array(NOISE_SIZE);
@@ -796,6 +797,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       }
 
       function randNormal() {
+          if (!noiseCache) return 0;
           if (noiseCursor >= NOISE_SIZE) noiseCursor = 0;
           return noiseCache[noiseCursor++];
       }
@@ -1207,7 +1209,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                    const targetSteps = (dtInput * params.speed) / 1.5; 
                    const substeps = Math.max(1, Math.min(40, Math.round(targetSteps)));
                    for (let i = 0; i < substeps; i++) integrate();
-                   if (stepCount % 8 === 0) buildWCACells();
+                   if (++wcaRebuildTick >= 3) { wcaRebuildTick = 0; buildWCACells(); }
                    needsFrame = true;
                }
                if (accumulationBuffer && (isRunning || needsFrame)) {
