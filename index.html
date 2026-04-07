@@ -25,7 +25,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>ProteinCHAOS v1.1</title>
+    <title>ProteinCHAOS v1.2</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script type="importmap">
       {
@@ -663,8 +663,9 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             </div>
           </div>
           <div class="flex gap-2 mb-3">
-            <button onclick="clearArt(false)" class="btn btn-danger text-xs">Clear Canvas</button>
+            <button onclick="clearArt(false)" class="btn btn-danger text-xs">Clear</button>
             <button onclick="saveSnapshot()" class="btn btn-secondary text-xs">Snapshot</button>
+            <button onclick="copyToClipboard()" class="btn btn-secondary text-xs" title="Copy current canvas to clipboard">Copy</button>
           </div>
           <div class="flex items-center justify-between mb-4">
             <span class="text-xs text-gray-500">History Restore</span>
@@ -2285,7 +2286,18 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               a.download = `chaos_vc_${currentPdbId}_${theme}.png`; a.href = url; a.click();
           });
       };
-      window.handleFileUpload = (input) => { 
+      window.copyToClipboard = () => {
+          if (!latestBuffer) { alert("Nothing to copy yet — run the simulation first."); return; }
+          artCanvas.toBlob(blob => {
+              if (!blob) return;
+              try {
+                  navigator.clipboard.write([new ClipboardItem({'image/png': blob})])
+                      .then(() => { /* silent success */ })
+                      .catch(() => alert("Clipboard write failed — try downloading instead."));
+              } catch(e) { alert("Clipboard API not available in this browser."); }
+          });
+      };
+      window.handleFileUpload = (input) => {
           const f = input.files[0]; if (!f) return; 
           const name = f.name.split('.')[0].toUpperCase().substring(0, 8); currentPdbId = name || "CUSTOM";
           const r = new FileReader(); r.onload = (e) => window.parseAndLoad(e.target.result); r.readAsText(f); 
