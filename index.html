@@ -617,6 +617,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             <div class="slider-header"><span>Jitter / Chaos</span><span id="jitter-val" class="slider-val">0.8</span></div>
             <input type="range" id="art-jitter" min="0" max="5.0" value="0.8" step="0.1" />
           </div>
+          <div class="slider-container" title="Glow / bloom intensity on bright trails.">
+            <div class="slider-header"><span>Bloom / Glow</span><span id="bloom-val" class="slider-val">0.15</span></div>
+            <input type="range" id="art-bloom" min="0" max="0.5" value="0.15" step="0.01" />
+          </div>
         </div>
 
         <!-- 5. Data Actions -->
@@ -1301,7 +1305,9 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       let historyStack = [];
       let latestBuffer = null; 
       let frameCounter = 0;
-      let grainMap = null; 
+      let grainMap = null;
+      let bloomCanvas = null;
+      let bloomCtx = null;
       let currentPdbId = "1CDW";
 
       let recordingMode = 'free'; 
@@ -1320,7 +1326,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           decay: document.getElementById('art-decay'), decayVal: document.getElementById('decay-val'),
           gamma: document.getElementById('art-gamma'), gammaVal: document.getElementById('gamma-val'),
           intensity: document.getElementById('art-intensity'), intensityVal: document.getElementById('intensity-val'), jitter: document.getElementById('art-jitter'),
-          jitterVal: document.getElementById('jitter-val'), theme: document.getElementById('art-theme'),
+          jitterVal: document.getElementById('jitter-val'),
+          bloom: document.getElementById('art-bloom'),
+          bloomVal: document.getElementById('bloom-val'),
+          theme: document.getElementById('art-theme'),
           preset: document.getElementById('style-preset'),
           resToggle: document.getElementById('res-toggle'), 
           resOptions: document.querySelectorAll('.toggle-option'),
@@ -1920,6 +1929,21 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           }
           
           artCtx.putImageData(viewImageData, 0, 0);
+
+          // Bloom pass: downsample → blur → screen-blend back
+          const bloomVal = ui.bloom ? parseFloat(ui.bloom.value) : 0;
+          if (bloomVal > 0.005 && bloomCanvas) {
+              const bpx = Math.max(1, Math.round(bloomCanvas.width / 64));
+              bloomCtx.filter = `blur(${bpx}px)`;
+              bloomCtx.drawImage(artCanvas, 0, 0, bloomCanvas.width, bloomCanvas.height);
+              bloomCtx.filter = 'none';
+              artCtx.save();
+              artCtx.globalCompositeOperation = 'screen';
+              artCtx.globalAlpha = bloomVal;
+              artCtx.drawImage(bloomCanvas, 0, 0, artWidth, artHeight);
+              artCtx.restore();
+          }
+
           if (state.isRecording) {
               drawWatermarks(artCtx, artWidth, artHeight, theme, bg);
               if (recordingMode === 'boomerang' && boomerangPhase === 'forward') {
@@ -2018,6 +2042,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           artCanvas.style.opacity = '1';
           grainMap = new Float32Array(artWidth * artHeight);
           for (let y = 0; y < artHeight; y++) { for (let x = 0; x < artWidth; x++) { const idx = y * artWidth + x; const v = Math.sin(x * 12.9898 + y * 78.233); grainMap[idx] = 0.9 + ((v - Math.floor(v)) * 0.1); } }
+          bloomCanvas = document.createElement('canvas');
+          bloomCanvas.width  = Math.max(1, artWidth  >> 2);
+          bloomCanvas.height = Math.max(1, artHeight >> 2);
+          bloomCtx = bloomCanvas.getContext('2d');
       }
       window.toggleResolution = (forceMode) => {
           const toggle = ui.resToggle;
@@ -2204,6 +2232,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           ui.intensity.oninput = (e) => { ui.intensityVal.textContent = e.target.value; send(); };
           ui.decay.oninput = (e) => { const val = parseFloat(e.target.value); ui.decayVal.textContent = val >= 99.9 ? "INF" : val.toFixed(1) + "%"; send(); };
           ui.jitter.oninput = (e) => { ui.jitterVal.textContent = e.target.value; send(); };
+          if (ui.bloom) ui.bloom.oninput = (e) => { if(ui.bloomVal) ui.bloomVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
           ui.zoom.oninput = (e) => { ui.zoomVal.textContent = e.target.value; send(); window.clearArt(false); };
           ui.gamma.oninput = (e) => { ui.gammaVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
           
