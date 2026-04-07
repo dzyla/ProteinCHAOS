@@ -519,6 +519,16 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                 <div class="slider-header"><span>Zoom Level</span><span id="zoom-val" class="slider-val">35</span></div>
                 <input type="range" id="art-zoom-control" min="5" max="200" value="35" step="1" />
              </div>
+             <div class="slider-container mt-2">
+               <div class="slider-header">
+                 <span>Auto-Spin</span>
+                 <label class="flex items-center gap-1 cursor-pointer select-none">
+                   <input type="checkbox" id="spin-toggle" class="w-3 h-3 accent-blue-500" onchange="toggleAutoSpin(this.checked)" />
+                   <span id="spin-val" class="slider-val">0 °/s</span>
+                 </label>
+               </div>
+               <input type="range" id="spin-speed" min="-60" max="60" value="5" step="1" oninput="updateSpinSpeed(this.value)" />
+             </div>
         </div>
 
         <!-- 4. Visuals -->
@@ -1310,6 +1320,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       let bloomCtx = null;
       let currentPdbId = "1CDW";
 
+      let autoSpinSpeed = 0;     // degrees/second, 0 = off
+      let autoSpinAngle = 0;
+      let autoSpinLastTime = 0;
+
       let recordingMode = 'free'; 
       const BOOMERANG_FRAMES = 75; 
       let capturedFrames = []; 
@@ -1349,7 +1363,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           rotY: document.getElementById('cam-rot-y'),
           rotZ: document.getElementById('cam-rot-z'),
           panX: document.getElementById('cam-pan-x'),
-          panY: document.getElementById('cam-pan-y')
+          panY: document.getElementById('cam-pan-y'),
+          spinToggle: document.getElementById('spin-toggle'),
+          spinSpeed:  document.getElementById('spin-speed'),
+          spinVal:    document.getElementById('spin-val'),
       };
 
       // UNION FIND HELPER FOR CLUSTERING
@@ -1406,6 +1423,18 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                    lastReplayTime = now; 
                    return; 
                }
+          }
+
+          // Auto-spin: slowly rotate Y axis, accumulating trails
+          if (autoSpinSpeed !== 0 && state.hasStructure) {
+              if (autoSpinLastTime === 0) autoSpinLastTime = now;
+              const spinDt = Math.min(now - autoSpinLastTime, 100); // cap at 100ms
+              autoSpinLastTime = now;
+              autoSpinAngle = (autoSpinAngle + autoSpinSpeed * spinDt / 1000 + 360) % 360;
+              ui.rotY.value = autoSpinAngle.toFixed(1);
+              window.updateWorkerParams();
+          } else {
+              autoSpinLastTime = 0;
           }
 
           if (worker && state.hasStructure && !workerTickInFlight) {
@@ -1763,6 +1792,21 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           }
           window.updateWorkerParams();
           window.clearArt(false);
+      };
+
+      window.toggleAutoSpin = (on) => {
+          if (on) {
+              autoSpinSpeed = parseFloat(ui.spinSpeed ? ui.spinSpeed.value : 5);
+              autoSpinAngle = parseFloat(ui.rotY.value) || 0;
+              autoSpinLastTime = 0; // reset timer so first dt is 0
+          } else {
+              autoSpinSpeed = 0;
+              autoSpinLastTime = 0;
+          }
+      };
+      window.updateSpinSpeed = (val) => {
+          if (ui.spinVal) ui.spinVal.textContent = val + ' °/s';
+          if (autoSpinSpeed !== 0) autoSpinSpeed = parseFloat(val);
       };
 
       window.toggleRecordMenu = () => { ui.recMenu.style.display = ui.recMenu.style.display === 'flex' ? 'none' : 'flex'; }
