@@ -2005,9 +2005,14 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           const gamma = parseFloat(ui.gamma.value);
           const invGamma = 1.0 / (Math.max(0.01, gamma));
 
-          // Log-precompressed ACES: log compresses wide dynamic range of the accumulation buffer
-          // so medium-brightness pixels (long-exposure trails) remain visible, then ACES applies
-          // the filmic S-curve. logDen precomputed once per frame.
+          // DataShader-style tone mapping:
+          //   1. log1p compresses accumulation dynamic range → [0,1]
+          //   2. gamma applied to log-compressed value (before ACES): low gamma hides faint
+          //      traces so only dense/strong paths show; high gamma lifts them. The max pixel
+          //      ALWAYS reaches full brightness regardless of gamma (normalized by ACES(1.0)).
+          //   3. ACES adds filmic S-curve shoulder/toe for aesthetic look.
+          // ACES(1.0) = 2.54/3.16 ≈ 0.8038 — divide output to keep max at 1.0.
+          const ACES_NORM = 0.8037974683;
           const logDen = Math.log1p(displayMax);
 
           if (!isRGB) {
@@ -2018,8 +2023,9 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   const idx = i * 4;
                   let r = bg.r, g = bg.g, b = bg.b;
                   if (val > 0.0) {
-                      let norm = acesToneMap(Math.log1p(val) / logDen);
-                      norm = Math.pow(norm, invGamma);
+                      const logC = Math.log1p(val) / logDen;
+                      const gammaC = Math.pow(logC, invGamma);
+                      let norm = acesToneMap(gammaC) / ACES_NORM;
                       const rgb = applyTheme(theme, norm, bg);
                       r = rgb.r; g = rgb.g; b = rgb.b;
                   }
@@ -2046,10 +2052,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   let bVal = buf[i*3+2];
                   const idx = i * 4;
                   
-                  // Log-precompressed ACES (same as grayscale path — preserves long-exposure gradient)
-                  rVal = Math.pow(acesToneMap(Math.log1p(rVal) / logDen), invGamma);
-                  gVal = Math.pow(acesToneMap(Math.log1p(gVal) / logDen), invGamma);
-                  bVal = Math.pow(acesToneMap(Math.log1p(bVal) / logDen), invGamma);
+                  // DataShader-style: gamma on log-compressed value, ACES filmic, normalized
+                  rVal = acesToneMap(Math.pow(Math.log1p(rVal) / logDen, invGamma)) / ACES_NORM;
+                  gVal = acesToneMap(Math.pow(Math.log1p(gVal) / logDen, invGamma)) / ACES_NORM;
+                  bVal = acesToneMap(Math.pow(Math.log1p(bVal) / logDen, invGamma)) / ACES_NORM;
                   
                   data[idx] = rVal * 255; 
                   data[idx+1] = gVal * 255; 
