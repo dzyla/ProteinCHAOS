@@ -1140,7 +1140,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                
                fadeCursor = 0;
                sentPositions = new Float32Array(nAtoms * 3);
-               sentBuffer = null; 
+               const sCh = (colorMode === 'chain') ? 3 : 1;
+               sentBuffer = new Float32Array(artWidth * artHeight * sCh);
 
                posX = new Float32Array(nAtoms); posY = new Float32Array(nAtoms); posZ = new Float32Array(nAtoms);
                refX = new Float32Array(nAtoms); refY = new Float32Array(nAtoms); refZ = new Float32Array(nAtoms);
@@ -1173,6 +1174,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                    colorMode = msg.data.colorMode;
                    const channels = (colorMode === 'chain') ? 3 : 1;
                    accumulationBuffer = new Float32Array(artWidth * artHeight * channels);
+                   sentBuffer = new Float32Array(artWidth * artHeight * channels);
                    fadeCursor = 0; needsFrame = true;
                }
                Object.assign(params, msg.data);
@@ -1187,11 +1189,15 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                artWidth = msg.width; artHeight = msg.height;
                const channels = (colorMode === 'chain') ? 3 : 1;
                accumulationBuffer = new Float32Array(artWidth * artHeight * channels);
-               sentBuffer = null; fadeCursor = 0; needsFrame = true;
+               sentBuffer = new Float32Array(artWidth * artHeight * channels);
+               fadeCursor = 0; needsFrame = true;
            } else if (msg.type === 'start') {
                isRunning = true; needsFrame = true; postMessage({ type: 'state', running: true });
            } else if (msg.type === 'pause') {
                isRunning = false; needsFrame = true; postMessage({ type: 'state', running: false });
+           } else if (msg.type === 'buf_return') {
+               // Main thread returned the buffer after rendering — re-adopt it
+               sentBuffer = new Float32Array(msg.buffer);
            } else if (msg.type === 'tick') {
                if (nAtoms === 0) { postMessage({ type: 'idle' }); return; }
                const dtInput = msg.dt || 16.6; 
@@ -1216,10 +1222,14 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               }
               frameCounter++;
               const shouldSendImage = forceHighFPS || (frameCounter % displayFrameSkip === 0) || !isRunning || needsFrame;
-              let bufToSend = null;
-              if (shouldSendImage && accumulationBuffer && nAtoms > 0) bufToSend = new Float32Array(accumulationBuffer);
-              if (bufToSend) postMessage({ type: 'update', positions: sentPositions, buffer: bufToSend, time: simTime }, [bufToSend.buffer]);
-              else postMessage({ type: 'update', positions: sentPositions, time: simTime });
+              if (shouldSendImage && accumulationBuffer && nAtoms > 0 && sentBuffer !== null) {
+                  sentBuffer.set(accumulationBuffer);
+                  const toSend = sentBuffer;
+                  sentBuffer = null; // in-flight until main returns it
+                  postMessage({ type: 'update', positions: sentPositions, buffer: toSend, time: simTime }, [toSend.buffer]);
+              } else {
+                  postMessage({ type: 'update', positions: sentPositions, time: simTime });
+              }
               needsFrame = isRunning;
            }
        };
@@ -1791,10 +1801,12 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               frameCounter++;
               if (buf) {
                   const isHistoryMode = !ui.history.disabled && (parseInt(ui.history.value) < parseInt(ui.history.max));
-                  if (!isHistoryMode) { latestBuffer = buf; renderDisplay(buf); }
+                  if (!isHistoryMode) { latestBuffer = new Float32Array(buf); renderDisplay(buf); }
+                  // Return the buffer to the worker (ping-pong transferable)
+                  if (worker) worker.postMessage({ type: 'buf_return', buffer: buf }, [buf.buffer]);
                   if (state.workerRunning && ui.autoHistoryToggle && ui.autoHistoryToggle.checked) {
                       const interval = parseInt(ui.autoHistoryInterval.value) || 240;
-                      if (interval > 0 && frameCounter % interval === 0) pushSnapshot(buf);
+                      if (interval > 0 && frameCounter % interval === 0) pushSnapshot(latestBuffer);
                   }
               }
               if (atomMeshes && atomMeshes.count === pos.length / 3) {
