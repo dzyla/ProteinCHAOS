@@ -2005,15 +2005,20 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           const gamma = parseFloat(ui.gamma.value);
           const invGamma = 1.0 / (Math.max(0.01, gamma));
 
+          // Log-precompressed ACES: log compresses wide dynamic range of the accumulation buffer
+          // so medium-brightness pixels (long-exposure trails) remain visible, then ACES applies
+          // the filmic S-curve. logDen precomputed once per frame.
+          const logDen = Math.log1p(displayMax);
+
           if (!isRGB) {
               const useGrain = (theme === 'rough' || theme === 'charcoal' || theme === 'graphite') && grainMap;
-              
+
               for (let i = 0; i < buf.length; i++) {
                   const val = buf[i];
                   const idx = i * 4;
                   let r = bg.r, g = bg.g, b = bg.b;
                   if (val > 0.0) {
-                      let norm = acesToneMap(val / displayMax);
+                      let norm = acesToneMap(Math.log1p(val) / logDen);
                       norm = Math.pow(norm, invGamma);
                       const rgb = applyTheme(theme, norm, bg);
                       r = rgb.r; g = rgb.g; b = rgb.b;
@@ -2041,10 +2046,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   let bVal = buf[i*3+2];
                   const idx = i * 4;
                   
-                  // ACES tone mapping + gamma
-                  rVal = Math.pow(acesToneMap(rVal / displayMax), invGamma);
-                  gVal = Math.pow(acesToneMap(gVal / displayMax), invGamma);
-                  bVal = Math.pow(acesToneMap(bVal / displayMax), invGamma);
+                  // Log-precompressed ACES (same as grayscale path — preserves long-exposure gradient)
+                  rVal = Math.pow(acesToneMap(Math.log1p(rVal) / logDen), invGamma);
+                  gVal = Math.pow(acesToneMap(Math.log1p(gVal) / logDen), invGamma);
+                  bVal = Math.pow(acesToneMap(Math.log1p(bVal) / logDen), invGamma);
                   
                   data[idx] = rVal * 255; 
                   data[idx+1] = gVal * 255; 
