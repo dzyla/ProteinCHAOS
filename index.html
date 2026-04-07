@@ -1903,7 +1903,17 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                       const rgb = applyTheme(theme, norm, bg);
                       r = rgb.r; g = rgb.g; b = rgb.b;
                   }
-                  if (useGrain) { const grain = grainMap[i]; r *= grain; g *= grain; b *= grain; }
+                  if (useGrain && grainMap) {
+                      const gx2 = (i % artWidth) & 255;
+                      const gy2 = Math.floor(i / artWidth) & 255;
+                      const rawG = grainMap[gy2*256+gx2]; // 0..1 value noise
+                      const lum = (r + g + b) / 765.0;
+                      const gs = 1.0 - lum * 0.75; // full grain in dark, 25% in bright
+                      const grain = 0.88 + rawG * 0.12 * gs;
+                      r = Math.min(255, r * grain);
+                      g = Math.min(255, g * grain);
+                      b = Math.min(255, b * grain);
+                  }
                   data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255; 
               }
           } else {
@@ -2040,8 +2050,25 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           artCanvas.width = artWidth; artCanvas.height = artHeight;
           viewImageData = new ImageData(artWidth, artHeight);
           artCanvas.style.opacity = '1';
-          grainMap = new Float32Array(artWidth * artHeight);
-          for (let y = 0; y < artHeight; y++) { for (let x = 0; x < artWidth; x++) { const idx = y * artWidth + x; const v = Math.sin(x * 12.9898 + y * 78.233); grainMap[idx] = 0.9 + ((v - Math.floor(v)) * 0.1); } }
+          // 256×256 tiled value-noise grain (256KB vs up to 32MB at 4K)
+          const GTILE = 256, GGRID = 16;
+          const gGrid = new Float32Array(GGRID * GGRID);
+          for (let i = 0; i < gGrid.length; i++) gGrid[i] = Math.random();
+          grainMap = new Float32Array(GTILE * GTILE);
+          for (let gy = 0; gy < GTILE; gy++) {
+              for (let gx = 0; gx < GTILE; gx++) {
+                  const wx = gx * GGRID / GTILE, wy = gy * GGRID / GTILE;
+                  const xi = Math.floor(wx) % GGRID, yi = Math.floor(wy) % GGRID;
+                  const xi1 = (xi+1)%GGRID, yi1 = (yi+1)%GGRID;
+                  const fx = wx - Math.floor(wx), fy = wy - Math.floor(wy);
+                  const ux = fx*fx*(3-2*fx), uy = fy*fy*(3-2*fy); // smoothstep
+                  const v = gGrid[yi*GGRID+xi]*(1-ux)*(1-uy)
+                          + gGrid[yi*GGRID+xi1]*ux*(1-uy)
+                          + gGrid[yi1*GGRID+xi]*(1-ux)*uy
+                          + gGrid[yi1*GGRID+xi1]*ux*uy;
+                  grainMap[gy*GTILE+gx] = v; // 0..1
+              }
+          }
           bloomCanvas = document.createElement('canvas');
           bloomCanvas.width  = Math.max(1, artWidth  >> 2);
           bloomCanvas.height = Math.max(1, artHeight >> 2);
