@@ -1045,14 +1045,17 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           const useColor = (colorMode === 'chain' && atomColors);
           const channels = useColor ? 3 : 1;
 
-          // Rotation Math (Euler X -> Y -> Z)
+          // Precompute combined rotation matrix R = Rz·Ry·Rx (9 trig calls once vs per-bond)
           const radX = (params.rotX || 0) * 0.0174533;
           const radY = (params.rotY || 0) * 0.0174533;
           const radZ = (params.rotZ || 0) * 0.0174533;
-          
-          const cx = Math.cos(radX), sx = Math.sin(radX);
-          const cy = Math.cos(radY), sy = Math.sin(radY);
-          const cz = Math.cos(radZ), sz = Math.sin(radZ);
+          const cxr = Math.cos(radX), sxr = Math.sin(radX);
+          const cyr = Math.cos(radY), syr = Math.sin(radY);
+          const czr = Math.cos(radZ), szr = Math.sin(radZ);
+          // R = Rz * Ry * Rx
+          const m00 = cyr*czr,              m01 = czr*sxr*syr - cxr*szr, m02 = cxr*czr*syr + sxr*szr;
+          const m10 = cyr*szr,              m11 = cxr*czr + sxr*syr*szr,  m12 = cxr*syr*szr - czr*sxr;
+          const m20 = -syr,                 m21 = cyr*sxr,                m22 = cxr*cyr;
 
           for (let k = 0; k < list.length; k++) {
               const link = list[k];
@@ -1064,30 +1067,17 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               let x1 = posX[i], y1 = posY[i], z1 = posZ[i];
               let x2 = posX[j], y2 = posY[j], z2 = posZ[j];
               
-              // Apply Rotation P1
-              // 1. RotX
-              let ty = y1*cx - z1*sx;
-              let tz = y1*sx + z1*cx;
-              y1 = ty; z1 = tz;
-              // 2. RotY
-              let tx = x1*cy + z1*sy;
-              tz = -x1*sy + z1*cy;
-              x1 = tx; z1 = tz;
-              // 3. RotZ
-              tx = x1*cz - y1*sz;
-              ty = x1*sz + y1*cz;
-              x1 = tx; y1 = ty;
+              // Rotate P1 via precomputed matrix (9 multiplies vs 15 trig calls per bond)
+              const rx1 = m00*x1 + m01*y1 + m02*z1;
+              const ry1 = m10*x1 + m11*y1 + m12*z1;
+              const rz1 = m20*x1 + m21*y1 + m22*z1;
+              x1 = rx1; y1 = ry1; z1 = rz1;
 
-              // Apply Rotation P2
-              ty = y2*cx - z2*sx;
-              tz = y2*sx + z2*cx;
-              y2 = ty; z2 = tz;
-              tx = x2*cy + z2*sy;
-              tz = -x2*sy + z2*cy;
-              x2 = tx; z2 = tz;
-              tx = x2*cz - y2*sz;
-              ty = x2*sz + y2*cz;
-              x2 = tx; y2 = ty;
+              // Rotate P2
+              const rx2 = m00*x2 + m01*y2 + m02*z2;
+              const ry2 = m10*x2 + m11*y2 + m12*z2;
+              const rz2 = m20*x2 + m21*y2 + m22*z2;
+              x2 = rx2; y2 = ry2; z2 = rz2;
 
               // Project
               const sx1 = x1 * zoom + cxScreen + panX;
@@ -1115,7 +1105,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   const ix = px | 0, iy = py | 0;
                   if (ix >= 0 && ix < w && iy >= 0 && iy < h) {
                       const z = z1 * (1 - t) + z2 * t;
-                      const depthCue = Math.max(0.1, 1.0 + z * 0.05);
+                      const depthCue = Math.max(0.05, 1.0 + z * 0.12);
                       const idx = (iy * w + ix) * channels;
                       
                       const val = intensity * depthCue * weight;
