@@ -570,6 +570,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   <option value="chain-neon">Chain: Neon</option>
                   <option value="chain-retro">Chain: Retro</option>
                   <option value="chain-earth">Chain: Earth</option>
+                  <option value="chain-vivid">Chain: Vivid</option>
+                  <option value="chain-publication">Chain: Publication</option>
+                  <option value="chain-wong">Chain: Wong (Colorblind-safe)</option>
+                  <option value="chain-pastel">Chain: Pastel</option>
               </optgroup>
               <optgroup label="Density / Heatmaps">
                   <option value="fire">Inferno (Black Background)</option>
@@ -1267,7 +1271,11 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           'spectral': [new THREE.Color(0x9e0142), new THREE.Color(0xd53e4f), new THREE.Color(0xf46d43), new THREE.Color(0xfdae61), new THREE.Color(0xfee08b), new THREE.Color(0xe6f598), new THREE.Color(0xabdda4), new THREE.Color(0x66c2a5), new THREE.Color(0x3288bd), new THREE.Color(0x5e4fa2)],
           'neon': [new THREE.Color(0xff00ff), new THREE.Color(0x00ffff), new THREE.Color(0xffff00), new THREE.Color(0xff0000), new THREE.Color(0x00ff00), new THREE.Color(0x0000ff)],
           'retro': [new THREE.Color(0x264653), new THREE.Color(0x2a9d8f), new THREE.Color(0xe9c46a), new THREE.Color(0xf4a261), new THREE.Color(0xe76f51)],
-          'earth': [new THREE.Color(0x582f0e), new THREE.Color(0x7f4f24), new THREE.Color(0x936639), new THREE.Color(0xa68a64), new THREE.Color(0xb6ad90), new THREE.Color(0xc2c5aa), new THREE.Color(0xa4ac86), new THREE.Color(0x656d4a)]
+          'earth': [new THREE.Color(0x582f0e), new THREE.Color(0x7f4f24), new THREE.Color(0x936639), new THREE.Color(0xa68a64), new THREE.Color(0xb6ad90), new THREE.Color(0xc2c5aa), new THREE.Color(0xa4ac86), new THREE.Color(0x656d4a)],
+          'vivid':       [new THREE.Color(0xff3b5c), new THREE.Color(0xff9f0a), new THREE.Color(0x30d158), new THREE.Color(0x64d2ff), new THREE.Color(0xbf5af2), new THREE.Color(0xff6961), new THREE.Color(0xffd60a), new THREE.Color(0x0a84ff)],
+          'publication': [new THREE.Color(0x222222), new THREE.Color(0x555555), new THREE.Color(0x888888), new THREE.Color(0xbbbbbb), new THREE.Color(0x1a6b8a), new THREE.Color(0x8a3324), new THREE.Color(0x4a7c59), new THREE.Color(0x7a4f2e)],
+          'wong':        [new THREE.Color(0xe69f00), new THREE.Color(0x56b4e9), new THREE.Color(0x009e73), new THREE.Color(0xf0e442), new THREE.Color(0x0072b2), new THREE.Color(0xd55e00), new THREE.Color(0xcc79a7), new THREE.Color(0x000000)],
+          'pastel':      [new THREE.Color(0xffb3ba), new THREE.Color(0xffdfba), new THREE.Color(0xffffba), new THREE.Color(0xbaffc9), new THREE.Color(0xbae1ff), new THREE.Color(0xd4baff), new THREE.Color(0xffbaee), new THREE.Color(0xc9f5f5)]
       };
       
       let VIEW_CHAIN_COLORS = CHAIN_PALETTES['default'];
@@ -1285,6 +1293,25 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       };
 
       const GLYCAN_NAMES = new Set(['NAG', 'MAN', 'BMA', 'FUC', 'GAL', 'GLC', 'SIA', 'NDG', 'FUL']);
+
+      // Residue property colors [r, g, b] normalized 0–1
+      const RESIDUE_PROPERTIES = {
+          // Hydrophobic (orange)
+          ALA:[0.98,0.45,0.09], VAL:[0.98,0.45,0.09], ILE:[0.98,0.45,0.09],
+          LEU:[0.98,0.45,0.09], MET:[0.98,0.45,0.09], PHE:[0.98,0.45,0.09],
+          TRP:[0.98,0.45,0.09], PRO:[0.98,0.45,0.09],
+          // Polar uncharged (cyan)
+          SER:[0.13,0.83,0.94], THR:[0.13,0.83,0.94], CYS:[0.13,0.83,0.94],
+          TYR:[0.13,0.83,0.94], ASN:[0.13,0.83,0.94], GLN:[0.13,0.83,0.94],
+          // Positive (blue)
+          LYS:[0.23,0.51,0.96], ARG:[0.23,0.51,0.96], HIS:[0.43,0.55,0.96],
+          // Negative (red)
+          ASP:[0.94,0.27,0.27], GLU:[0.94,0.27,0.27],
+          // Glycine/special (light gray)
+          GLY:[0.82,0.82,0.82],
+          // Default
+          UNK:[0.55,0.55,0.55]
+      };
 
       const PRESETS = {
         'editorial-clean': { theme: 'ink', zoom: 45, decay: 98.5, gamma: 1.1, intensity: 45, jitter: 0.2 },
