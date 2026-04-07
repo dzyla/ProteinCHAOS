@@ -1067,7 +1067,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               let x1 = posX[i], y1 = posY[i], z1 = posZ[i];
               let x2 = posX[j], y2 = posY[j], z2 = posZ[j];
               
-              // Rotate P1 via precomputed matrix (9 multiplies vs 15 trig calls per bond)
+              // Rotate P1 via precomputed matrix (18 mul vs 24 mul per bond, no per-bond trig)
               const rx1 = m00*x1 + m01*y1 + m02*z1;
               const ry1 = m10*x1 + m11*y1 + m12*z1;
               const rz1 = m20*x1 + m21*y1 + m22*z1;
@@ -1105,7 +1105,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   const ix = px | 0, iy = py | 0;
                   if (ix >= 0 && ix < w && iy >= 0 && iy < h) {
                       const z = z1 * (1 - t) + z2 * t;
-                      const depthCue = Math.max(0.05, 1.0 + z * 0.12);
+                      const depthCue = Math.min(2.5, Math.max(0.05, 1.0 + z * 0.12));
                       const idx = (iy * w + ix) * channels;
                       
                       const val = intensity * depthCue * weight;
