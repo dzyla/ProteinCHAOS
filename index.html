@@ -2379,12 +2379,48 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           }
           window.parseAndLoad(txt);
       };
+      function getChainBackground() {
+          const mode = document.getElementById('art-color-mode')?.value || 'density';
+          const selId = (mode === 'residue') ? 'residue-bg-mode' : 'art-bg-mode';
+          const val = document.getElementById(selId)?.value || 'black';
+          if (val === 'white') return {r:255, g:255, b:255};
+          if (val === 'dark')  return {r:18,  g:18,  b:18 };
+          return {r:0, g:0, b:0};
+      }
       function updateArtPanelBackground() {
           if (!artPanelEl) return;
-          const theme = ui.theme.value;
-          const bg = getThemeBackground(theme);
+          const mode = document.getElementById('art-color-mode')?.value || 'density';
+          const bg = (mode === 'density') ? getThemeBackground(ui.theme.value) : getChainBackground();
           artPanelEl.style.background = `rgb(${bg.r}, ${bg.g}, ${bg.b})`;
       }
+      window.onChainPaletteChange = () => {
+          if (!window.globalAtoms) return;
+          const paletteKey = document.getElementById('chain-palette')?.value || 'default';
+          const palette = CHAIN_PALETTES[paletteKey] || CHAIN_PALETTES['default'];
+          const uniqueChains = [...new Set(window.globalAtoms.map(a => a.chain))].sort();
+          uniqueChains.forEach((ch, idx) => {
+              const c = palette[idx % palette.length];
+              window.chainColors[ch] = '#'
+                  + Math.round(c.r*255).toString(16).padStart(2,'0')
+                  + Math.round(c.g*255).toString(16).padStart(2,'0')
+                  + Math.round(c.b*255).toString(16).padStart(2,'0');
+          });
+          const chainSection = document.getElementById('chain-color-section');
+          if (chainSection) {
+              chainSection.querySelectorAll('input[type="color"]').forEach((input, idx) => {
+                  const ch = uniqueChains[idx];
+                  if (ch) input.value = window.chainColors[ch];
+              });
+          }
+          rebuildColorArray();
+          window.clearArt(false);
+      };
+
+      window.onBgModeChange = () => {
+          updateArtPanelBackground();
+          renderDisplay();
+      };
+
       function updateStatusUI() {
           const workerActive = state.workerRunning;
           const status = workerActive ? "Simulating" : state.isLoading ? "Loading" : state.hasStructure ? "Idle" : "Awaiting";
@@ -2441,7 +2477,14 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       };
 
       window.onColorModeChange = () => {
-          window.updateWorkerParams(); // switches density vs chain buffer mode
+          const mode = document.getElementById('art-color-mode')?.value || 'density';
+          document.getElementById('density-panel').style.display  = (mode === 'density')  ? '' : 'none';
+          document.getElementById('chain-panel').style.display    = (mode === 'chain')    ? '' : 'none';
+          document.getElementById('residue-panel').style.display  = (mode === 'residue')  ? '' : 'none';
+          const chainSection = document.getElementById('chain-color-section');
+          if (chainSection) chainSection.style.display = (mode === 'chain') ? '' : 'none';
+          updateArtPanelBackground();
+          window.updateWorkerParams();
           rebuildColorArray();
           window.clearArt(false);
       };
