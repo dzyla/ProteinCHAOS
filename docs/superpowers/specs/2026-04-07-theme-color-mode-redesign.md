@@ -139,6 +139,43 @@ r = r * 0.6; g = g * 0.6; b = b * 0.6;
 [ Background ]  ● Black  ○ White  ○ Dark Grey
 ```
 
+---
+
+## CPU Fix: Idle Worker Drain
+
+**Problem:** When paused, the main thread still posts `tick` messages to the worker at 60 fps via `requestAnimationFrame`. In the worker, `shouldSendImage` includes `|| !isRunning`, so a full buffer transfer happens every frame even when nothing has changed — keeping the CPU pinned.
+
+**Fix — worker side (inside `workerCode` string):**
+
+1. Add early-return when paused and no frame needed:
+```js
+} else if (msg.type === 'tick') {
+    if (nAtoms === 0) { postMessage({ type: 'idle' }); return; }
+    if (!isRunning && !needsFrame) { postMessage({ type: 'idle' }); return; } // NEW
+```
+
+2. Remove `!isRunning` from `shouldSendImage`:
+```js
+// Before:
+const shouldSendImage = forceHighFPS || (frameCounter % displayFrameSkip === 0) || !isRunning || needsFrame;
+// After:
+const shouldSendImage = forceHighFPS || (frameCounter % displayFrameSkip === 0) || needsFrame;
+```
+
+The pause handler already sets `needsFrame = true`, so one final frame is flushed after pause. After that, all subsequent ticks are short-circuited.
+
+**Fix — main thread:** Stop posting tick messages when paused and no structure interaction is needed:
+```js
+// Before:
+if (worker && state.hasStructure && !workerTickInFlight) {
+// After:
+if (worker && state.hasStructure && !workerTickInFlight && (state.workerRunning || state.needsWorkerDrain)) {
+```
+
+Track `state.needsWorkerDrain = true` when pause is requested; clear it when worker returns the first idle after pause.
+
+---
+
 ## Files Changed
 
 - `index.html` only (single-file project, no build system)
@@ -147,4 +184,4 @@ r = r * 0.6; g = g * 0.6; b = b * 0.6;
 
 - No changes to the 3D preview color mode (`#view-color-mode`)
 - No changes to Style Presets for chain/residue (presets remain density-only)
-- No new worker messages
+- No new worker message types (uses existing `idle` return)
