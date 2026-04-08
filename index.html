@@ -1738,7 +1738,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                           </div>`;
                       });
                       chainSection.innerHTML = html;
-                      chainSection.style.display = uniqueChains.length > 0 ? 'block' : 'none';
+                      const cmodeOnLoad = document.getElementById('art-color-mode')?.value || 'density';
+                      chainSection.style.display = (uniqueChains.length > 0 && cmodeOnLoad === 'chain') ? 'block' : 'none';
                   }
 
                   // Build initial color array from chain colors
@@ -2461,11 +2462,6 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           }
       }
       
-      function updateChainColors() {
-          // Legacy: called when chain-* theme selected. Now just triggers rebuildColorArray.
-          rebuildColorArray();
-      }
-
       function rebuildColorArray() {
           if (!window.globalAtoms) return;
           const cMode = document.getElementById('art-color-mode')?.value || 'density';
@@ -2525,30 +2521,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           
           ui.theme.onchange = () => {
               updateArtPanelBackground();
-              window.updateWorkerParams(); // Switch mode
-              if (ui.theme.value.startsWith('chain') && window.globalAtoms) {
-                  // Load this palette's colors into per-chain pickers
-                  const paletteKey = ui.theme.value.replace('chain-', '');
-                  const palette = CHAIN_PALETTES[paletteKey] || CHAIN_PALETTES['default'];
-                  const uniqueChains = [...new Set(window.globalAtoms.map(a => a.chain))].sort();
-                  uniqueChains.forEach((ch, idx) => {
-                      const c = palette[idx % palette.length];
-                      const hex = '#'
-                          + Math.round(c.r*255).toString(16).padStart(2,'0')
-                          + Math.round(c.g*255).toString(16).padStart(2,'0')
-                          + Math.round(c.b*255).toString(16).padStart(2,'0');
-                      window.chainColors[ch] = hex;
-                  });
-                  // Sync picker inputs to new colors
-                  const chainSection = document.getElementById('chain-color-section');
-                  if (chainSection) {
-                      chainSection.querySelectorAll('input[type="color"]').forEach((input, idx) => {
-                          const ch = uniqueChains[idx];
-                          if (ch) input.value = window.chainColors[ch];
-                      });
-                  }
-                  rebuildColorArray();
-              }
+              window.updateWorkerParams();
               window.clearArt(false);
           };
           ui.source.onchange = () => { window.updateWorkerParams(); window.clearArt(false); };
