@@ -2035,7 +2035,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           const isRGB = buf.length === viewImageData.width * viewImageData.height * 3;
           const theme = ui.theme.value;
           const data = viewImageData.data;
-          const bg = getThemeBackground(theme);
+          const artMode = document.getElementById('art-color-mode')?.value || 'density';
+          const bg = (artMode === 'density') ? getThemeBackground(theme) : getChainBackground();
           
           // 1. Unified Auto-Exposure Calculation
           let localMax = 0;
@@ -2101,11 +2102,31 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               }
           } else {
               const len = buf.length / 3;
+              const chainStyle = document.getElementById('chain-style')?.value || 'normal';
+              const bgLight = bg.r > 128;
               for (let i = 0; i < len; i++) {
                   const idx = i * 4;
-                  const r = toneMap(Math.log1p(buf[i*3])   / logDen);
-                  const g = toneMap(Math.log1p(buf[i*3+1]) / logDen);
-                  const b = toneMap(Math.log1p(buf[i*3+2]) / logDen);
+                  let r = toneMap(Math.log1p(buf[i*3])   / logDen);
+                  let g = toneMap(Math.log1p(buf[i*3+1]) / logDen);
+                  let b = toneMap(Math.log1p(buf[i*3+2]) / logDen);
+                  if (r === 0 && g === 0 && b === 0) {
+                      data[idx] = bg.r; data[idx+1] = bg.g; data[idx+2] = bg.b; data[idx+3] = 255;
+                      continue;
+                  }
+                  if (chainStyle === 'neon') {
+                      const avg = (r + g + b) / 3;
+                      r = Math.min(1, avg + (r - avg) * 1.8);
+                      g = Math.min(1, avg + (g - avg) * 1.8);
+                      b = Math.min(1, avg + (b - avg) * 1.8);
+                  } else if (chainStyle === 'inkwash') {
+                      const lum = 0.299*r + 0.587*g + 0.114*b;
+                      r = lum + (r - lum) * 0.25;
+                      g = lum + (g - lum) * 0.25;
+                      b = lum + (b - lum) * 0.25;
+                      if (bgLight) { r = 1 - r; g = 1 - g; b = 1 - b; }
+                  } else if (chainStyle === 'faded') {
+                      r *= 0.6; g *= 0.6; b *= 0.6;
+                  }
                   data[idx] = r * 255; data[idx+1] = g * 255; data[idx+2] = b * 255; data[idx+3] = 255;
               }
           }
