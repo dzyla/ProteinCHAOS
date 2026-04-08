@@ -540,64 +540,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             </svg>
             Style Settings
           </div>
-          <!-- STYLE PRESET DROPDOWN -->
-          <div class="mb-4">
-            <label class="text-xs text-gray-500 block mb-1">Style Preset</label>
-            <select id="style-preset" class="w-full" onchange="applyPreset(this.value)">
-              <option value="custom" selected>Custom</option>
-              <optgroup label="Scientific / Editorial">
-                  <option value="editorial-clean">Journal Figure (Ink)</option>
-                  <option value="editorial-dark">Cover Art (Viridis)</option>
-                  <option value="blueprint">Blueprint Technical</option>
-                  <option value="lab">Clinical Lab</option>
-              </optgroup>
-              <optgroup label="Emotional / Abstract">
-                  <option value="chaos-fire">Inferno Collapse</option>
-                  <option value="chaos-gold">Golden Hour</option>
-                  <option value="sketch">Rough Notebook</option>
-                  <option value="cyber">Neon Cyberpunk</option>
-              </optgroup>
-            </select>
-          </div>
-
-          <div class="mb-4">
-            <label class="text-xs text-gray-500 block mb-1">Theme</label>
-            <select id="art-theme" class="w-full">
-              <option value="sunset" selected>Sunset (Purple/Gold)</option>
-              <optgroup label="Chain Colors">
-                  <option value="chain-default">Chain: Default</option>
-                  <option value="chain-spectral">Chain: Spectral</option>
-                  <option value="chain-neon">Chain: Neon</option>
-                  <option value="chain-retro">Chain: Retro</option>
-                  <option value="chain-earth">Chain: Earth</option>
-                  <option value="chain-vivid">Chain: Vivid</option>
-                  <option value="chain-publication">Chain: Publication</option>
-                  <option value="chain-wong">Chain: Wong (Colorblind-safe)</option>
-                  <option value="chain-pastel">Chain: Pastel</option>
-              </optgroup>
-              <optgroup label="Density / Heatmaps">
-                  <option value="fire">Inferno (Black Background)</option>
-                  <option value="ice">Glacier (Cyan/Blue)</option>
-                  <option value="ink">Sumi-e (Ink/White)</option>
-                  <option value="rough">Rough Sketch (Pencil/Paper)</option>
-                  <option value="charcoal">Charcoal (Dark Sketch)</option>
-                  <option value="graphite">Graphite (Clean Pencil)</option>
-                  <option value="sakura">Sakura (Pink/White)</option>
-                  <option value="lab">Laboratory (Clinical)</option>
-                  <option value="editorial">Editorial (Red/BW)</option>
-                  <option value="bio">Biohazard (Green)</option>
-                  <option value="blueprint">Blueprint (Tech)</option>
-                  <option value="heme">Heme Glow (Deep Red)</option>
-                  <option value="electrostatic">Electrostatic Field</option>
-                  <option value="cyber">Neon Cyberpunk</option>
-                  <option value="gold">Golden Hour</option>
-                  <option value="quantum">Quantum Foam</option>
-                  <option value="viridis">Viridis (Scientific)</option>
-                  <option value="magma">Magma (Scientific)</option>
-              </optgroup>
-            </select>
-          </div>
-
+          <!-- COLOR MODE (master switch) -->
           <div class="mb-4">
             <label class="text-xs text-gray-500 block mb-1">Color Mode</label>
             <select id="art-color-mode" class="w-full" onchange="onColorModeChange()">
@@ -605,6 +548,99 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               <option value="chain">Chain Colors</option>
               <option value="residue">Residue Properties</option>
             </select>
+          </div>
+
+          <!-- DENSITY SUB-PANEL -->
+          <div id="density-panel">
+            <div class="mb-4">
+              <label class="text-xs text-gray-500 block mb-1">Theme</label>
+              <select id="art-theme" class="w-full">
+                <option value="sunset" selected>Sunset (Purple/Gold)</option>
+                <option value="fire">Inferno (Black bg)</option>
+                <option value="ice">Glacier (Cyan/Blue)</option>
+                <option value="ink">Sumi-e (Ink/White)</option>
+                <option value="rough">Rough Sketch (Pencil/Paper)</option>
+                <option value="charcoal">Charcoal (Dark Sketch)</option>
+                <option value="graphite">Graphite (Clean Pencil)</option>
+                <option value="sakura">Sakura (Pink/White)</option>
+                <option value="lab">Laboratory (Clinical)</option>
+                <option value="editorial">Editorial (Red/BW)</option>
+                <option value="bio">Biohazard (Green)</option>
+                <option value="blueprint">Blueprint (Tech)</option>
+                <option value="heme">Heme Glow (Deep Red)</option>
+                <option value="electrostatic">Electrostatic Field</option>
+                <option value="cyber">Neon Cyberpunk</option>
+                <option value="gold">Golden Hour</option>
+                <option value="quantum">Quantum Foam</option>
+                <option value="viridis">Viridis (Scientific)</option>
+                <option value="magma">Magma (Scientific)</option>
+              </select>
+            </div>
+            <div class="mb-4">
+              <label class="text-xs text-gray-500 block mb-1">Style Preset</label>
+              <select id="style-preset" class="w-full" onchange="applyPreset(this.value)">
+                <option value="custom" selected>Custom</option>
+                <optgroup label="Scientific / Editorial">
+                    <option value="editorial-clean">Journal Figure (Ink)</option>
+                    <option value="editorial-dark">Cover Art (Viridis)</option>
+                    <option value="blueprint">Blueprint Technical</option>
+                    <option value="lab">Clinical Lab</option>
+                </optgroup>
+                <optgroup label="Emotional / Abstract">
+                    <option value="chaos-fire">Inferno Collapse</option>
+                    <option value="chaos-gold">Golden Hour</option>
+                    <option value="sketch">Rough Notebook</option>
+                    <option value="cyber">Neon Cyberpunk</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <!-- CHAIN COLORS SUB-PANEL -->
+          <div id="chain-panel" style="display:none">
+            <div class="mb-4">
+              <label class="text-xs text-gray-500 block mb-1">Chain Palette</label>
+              <select id="chain-palette" class="w-full" onchange="onChainPaletteChange()">
+                <option value="default">Default</option>
+                <option value="spectral">Spectral</option>
+                <option value="neon">Neon</option>
+                <option value="retro">Retro</option>
+                <option value="earth">Earth</option>
+                <option value="vivid">Vivid</option>
+                <option value="publication">Publication</option>
+                <option value="wong">Wong (Colorblind-safe)</option>
+                <option value="pastel">Pastel</option>
+              </select>
+            </div>
+            <div class="mb-4">
+              <label class="text-xs text-gray-500 block mb-1">Chain Style</label>
+              <select id="chain-style" class="w-full" onchange="renderDisplay()">
+                <option value="normal">Normal</option>
+                <option value="neon">Neon Glow</option>
+                <option value="inkwash">Ink Wash</option>
+                <option value="faded">Faded</option>
+              </select>
+            </div>
+            <div class="mb-4">
+              <label class="text-xs text-gray-500 block mb-1">Background</label>
+              <select id="art-bg-mode" class="w-full" onchange="onBgModeChange()">
+                <option value="black" selected>Black</option>
+                <option value="white">White</option>
+                <option value="dark">Dark Grey</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- RESIDUE PROPERTIES SUB-PANEL -->
+          <div id="residue-panel" style="display:none">
+            <div class="mb-4">
+              <label class="text-xs text-gray-500 block mb-1">Background</label>
+              <select id="residue-bg-mode" class="w-full" onchange="onBgModeChange()">
+                <option value="black" selected>Black</option>
+                <option value="white">White</option>
+                <option value="dark">Dark Grey</option>
+              </select>
+            </div>
           </div>
 
           <!-- RESOLUTION SWITCH -->
