@@ -527,7 +527,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                    <span id="spin-val" class="slider-val">0 °/s</span>
                  </label>
                </div>
-               <input type="range" id="spin-speed" min="-60" max="60" value="5" step="1" oninput="updateSpinSpeed(this.value)" />
+               <input type="range" id="spin-speed" min="-10" max="10" value="2" step="0.1" oninput="updateSpinSpeed(this.value)" />
              </div>
         </div>
 
@@ -629,8 +629,12 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             <input type="range" id="art-decay" min="80" max="100" value="98" step="0.1" />
           </div>
           <div class="slider-container">
-            <div class="slider-header"><span>Exposure (Gamma)</span><span id="gamma-val" class="slider-val">0.50</span></div>
-            <input type="range" id="art-gamma" min="0.01" max="3.0" value="0.5" step="0.01" />
+            <div class="slider-header"><span>Density Threshold</span><span id="gamma-val" class="slider-val">0.00</span></div>
+            <input type="range" id="art-gamma" min="0.0" max="0.9" value="0.0" step="0.01" />
+          </div>
+          <div class="slider-container">
+            <div class="slider-header"><span>Trail Sharpness</span><span id="softness-val" class="slider-val">2.0</span></div>
+            <input type="range" id="art-softness" min="0.3" max="5.0" value="2.0" step="0.1" />
           </div>
           <div class="slider-container">
             <div class="slider-header"><span>Texture/Noise</span><span id="intensity-val" class="slider-val">40</span></div>
@@ -834,6 +838,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           return noiseCache[noiseCursor++];
       }
 
+      function wcaKey(cx, cy, cz) {
+          // Encode cell coordinates as a single integer (offset by 512 to handle negatives)
+          return ((cx + 512) * 1048576 + (cy + 512) * 1024 + (cz + 512)) | 0;
+      }
       function buildWCACells() {
           if (nAtoms === 0) { wcaCells = null; return; }
           wcaCells = new Map();
@@ -841,7 +849,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               const cx = Math.floor(posX[i] / WCA_CELL_SIZE);
               const cy = Math.floor(posY[i] / WCA_CELL_SIZE);
               const cz = Math.floor(posZ[i] / WCA_CELL_SIZE);
-              const key = cx + ',' + cy + ',' + cz;
+              const key = wcaKey(cx, cy, cz);
               let cell = wcaCells.get(key);
               if (!cell) { cell = []; wcaCells.set(key, cell); }
               cell.push(i);
@@ -980,34 +988,39 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               }
           }
           
-          const GLY_REPULSION_DIST = 0.8; 
+          const GLY_REPULSION_DIST = 0.8;
           const GLY_REPULSION_SQ = GLY_REPULSION_DIST * GLY_REPULSION_DIST;
           const GLY_REPULSION_STRENGTH = 80.0;
 
-          for(let i=0; i<nAtoms; i++) {
-              if(!isGlycan[i]) continue;
-              
-              for(let j=0; j<nAtoms; j++) {
-                  if(isGlycan[j]) continue; 
-                  
-                  const dx = posX[i] - posX[j];
-                  if(Math.abs(dx) > GLY_REPULSION_DIST) continue;
-                  const dy = posY[i] - posY[j];
-                  if(Math.abs(dy) > GLY_REPULSION_DIST) continue;
-                  const dz = posZ[i] - posZ[j];
-                  if(Math.abs(dz) > GLY_REPULSION_DIST) continue;
-
-                  const r2 = dx*dx + dy*dy + dz*dz;
-                  if(isNaN(r2) || r2 > GLY_REPULSION_SQ || r2 < 0.0001) continue;
-
-                  const r = Math.sqrt(r2);
-                  const f = GLY_REPULSION_STRENGTH * (GLY_REPULSION_DIST - r);
-                  const fx = (dx/r) * f;
-                  const fy = (dy/r) * f;
-                  const fz = (dz/r) * f;
-
-                  forceX[i] += fx; forceY[i] += fy; forceZ[i] += fz;
-                  forceX[j] -= fx; forceY[j] -= fy; forceZ[j] -= fz;
+          // Glycan repulsion: use WCA cell list instead of O(N²)
+          if (wcaCells) {
+              for (let i = 0; i < nAtoms; i++) {
+                  if (!isGlycan[i]) continue;
+                  const cx = Math.floor(posX[i] / WCA_CELL_SIZE);
+                  const cy = Math.floor(posY[i] / WCA_CELL_SIZE);
+                  const cz = Math.floor(posZ[i] / WCA_CELL_SIZE);
+                  for (let ddx = -1; ddx <= 1; ddx++) {
+                      for (let ddy = -1; ddy <= 1; ddy++) {
+                          for (let ddz = -1; ddz <= 1; ddz++) {
+                              const cell = wcaCells.get(wcaKey(cx+ddx, cy+ddy, cz+ddz));
+                              if (!cell) continue;
+                              for (let ki = 0; ki < cell.length; ki++) {
+                                  const j = cell[ki];
+                                  if (j === i || isGlycan[j]) continue;
+                                  const dx = posX[i] - posX[j];
+                                  const dy = posY[i] - posY[j];
+                                  const dz = posZ[i] - posZ[j];
+                                  const r2 = dx*dx + dy*dy + dz*dz;
+                                  if (r2 > GLY_REPULSION_SQ || r2 < 0.0001) continue;
+                                  const r = Math.sqrt(r2);
+                                  const f = GLY_REPULSION_STRENGTH * (GLY_REPULSION_DIST - r);
+                                  const fx = (dx/r) * f, fy = (dy/r) * f, fz = (dz/r) * f;
+                                  forceX[i] += fx; forceY[i] += fy; forceZ[i] += fz;
+                                  forceX[j] -= fx; forceY[j] -= fy; forceZ[j] -= fz;
+                              }
+                          }
+                      }
+                  }
               }
           }
 
@@ -1022,7 +1035,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   for (let dx = -1; dx <= 1; dx++) {
                       for (let dy = -1; dy <= 1; dy++) {
                           for (let dz = -1; dz <= 1; dz++) {
-                              const cell = wcaCells.get((cx+dx)+','+(cy+dy)+','+(cz+dz));
+                              const cell = wcaCells.get(wcaKey(cx+dx, cy+dy, cz+dz));
                               if (!cell) continue;
                               for (let ki = 0; ki < cell.length; ki++) {
                                   const j = cell[ki];
@@ -1236,7 +1249,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                }
            } else if (msg.type === 'tick') {
                if (nAtoms === 0) { postMessage({ type: 'idle' }); return; }
-               const dtInput = msg.dt || 16.6; 
+               if (!isRunning && !needsFrame) { postMessage({ type: 'idle' }); return; }
+               const dtInput = msg.dt || 16.6;
                if (isRunning) {
                    const targetSteps = (dtInput * params.speed) / 1.5; 
                    const substeps = Math.max(1, Math.min(40, Math.round(targetSteps)));
@@ -1257,7 +1271,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   sentPositions[base+2] = posZ[i];
               }
               frameCounter++;
-              const shouldSendImage = forceHighFPS || (frameCounter % displayFrameSkip === 0) || !isRunning || needsFrame;
+              const shouldSendImage = forceHighFPS || (frameCounter % displayFrameSkip === 0) || needsFrame;
               if (shouldSendImage && accumulationBuffer && nAtoms > 0 && sentBuffer !== null) {
                   sentBuffer.set(accumulationBuffer);
                   const toSend = sentBuffer;
@@ -1327,14 +1341,14 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       };
 
       const PRESETS = {
-        'editorial-clean': { theme: 'ink', zoom: 45, decay: 98.5, gamma: 1.1, intensity: 45, jitter: 0.2 },
-        'editorial-dark': { theme: 'viridis', zoom: 40, decay: 99.0, gamma: 1.0, intensity: 50, jitter: 0.3 },
-        'blueprint': { theme: 'blueprint', zoom: 50, decay: 97.0, gamma: 0.9, intensity: 60, jitter: 0.1 },
-        'lab': { theme: 'lab', zoom: 45, decay: 98.0, gamma: 1.0, intensity: 50, jitter: 0.2 },
-        'chaos-fire': { theme: 'magma', zoom: 30, decay: 96.0, gamma: 0.8, intensity: 80, jitter: 1.5 },
-        'chaos-gold': { theme: 'gold', zoom: 35, decay: 97.5, gamma: 0.9, intensity: 60, jitter: 1.0 },
-        'sketch': { theme: 'rough', zoom: 40, decay: 92.0, gamma: 1.0, intensity: 70, jitter: 0.8 },
-        'cyber': { theme: 'cyber', zoom: 35, decay: 98.5, gamma: 1.1, intensity: 55, jitter: 0.5 }
+        'editorial-clean': { theme: 'ink', zoom: 45, decay: 98.5, gamma: 0.7, intensity: 45, jitter: 0.2 },
+        'editorial-dark': { theme: 'viridis', zoom: 40, decay: 99.0, gamma: 0.6, intensity: 50, jitter: 0.3 },
+        'blueprint': { theme: 'blueprint', zoom: 50, decay: 97.0, gamma: 0.5, intensity: 60, jitter: 0.1 },
+        'lab': { theme: 'lab', zoom: 45, decay: 98.0, gamma: 0.6, intensity: 50, jitter: 0.2 },
+        'chaos-fire': { theme: 'magma', zoom: 30, decay: 96.0, gamma: 0.4, intensity: 80, jitter: 1.5 },
+        'chaos-gold': { theme: 'gold', zoom: 35, decay: 97.5, gamma: 0.5, intensity: 60, jitter: 1.0 },
+        'sketch': { theme: 'rough', zoom: 40, decay: 92.0, gamma: 0.6, intensity: 70, jitter: 0.8 },
+        'cyber': { theme: 'cyber', zoom: 35, decay: 98.5, gamma: 0.7, intensity: 55, jitter: 0.5 }
       };
 
       let worker = null;
@@ -1380,6 +1394,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           zoom: document.getElementById('art-zoom-control'), zoomVal: document.getElementById('zoom-val'),
           decay: document.getElementById('art-decay'), decayVal: document.getElementById('decay-val'),
           gamma: document.getElementById('art-gamma'), gammaVal: document.getElementById('gamma-val'),
+          softness: document.getElementById('art-softness'), softnessVal: document.getElementById('softness-val'),
           intensity: document.getElementById('art-intensity'), intensityVal: document.getElementById('intensity-val'), jitter: document.getElementById('art-jitter'),
           jitterVal: document.getElementById('jitter-val'),
           bloom: document.getElementById('art-bloom'),
@@ -1918,6 +1933,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (mode === 'free') { setTimeout(() => { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }, 5000); }
       };
       
+
+
       function handleWorkerMessage(e) {
           const msg = e.data;
           if (msg.type === 'state') { state.workerRunning = !!msg.running; updateStatusUI(); return; }
@@ -2002,18 +2019,23 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           else displayMax = displayMax * 0.99 + localMax * 0.01;
           if(displayMax < 0.1) displayMax = 0.1;
           
-          const gamma = parseFloat(ui.gamma.value);
-          const invGamma = 1.0 / (Math.max(0.01, gamma));
+          const threshold = parseFloat(ui.gamma.value);
+          const sharpness = parseFloat(ui.softness.value);
 
-          // DataShader-style tone mapping:
-          //   1. log1p compresses accumulation dynamic range → [0,1]
-          //   2. gamma applied to log-compressed value (before ACES): low gamma hides faint
-          //      traces so only dense/strong paths show; high gamma lifts them. The max pixel
-          //      ALWAYS reaches full brightness regardless of gamma (normalized by ACES(1.0)).
-          //   3. ACES adds filmic S-curve shoulder/toe for aesthetic look.
-          // ACES(1.0) = 2.54/3.16 ≈ 0.8038 — divide output to keep max at 1.0.
+          // Tone mapping: power curve (sharpness = invGamma) then threshold clip
+          //   1. log1p compresses accumulation dynamic range → logC in [0,1]
+          //   2. Power curve: pow(logC, sharpness) — sharpness>1 crushes darks (like original invGamma)
+          //   3. Hard clip: powered ≤ threshold → background; otherwise rescale [threshold,1] → [0,1]
+          //   4. ACES filmic shoulder for graceful highlight roll-off.
           const ACES_NORM = 0.8037974683;
           const logDen = Math.log1p(displayMax);
+          const threshRange = 1.0 - threshold || 1e-6;
+          function toneMap(logC) {
+              const powered = Math.pow(logC, sharpness); // same mechanism as original invGamma
+              if (powered <= threshold) return 0;
+              const norm = (powered - threshold) / threshRange; // rescale to [0,1]
+              return acesToneMap(norm) / ACES_NORM;
+          }
 
           if (!isRGB) {
               const useGrain = (theme === 'rough' || theme === 'charcoal' || theme === 'graphite') && grainMap;
@@ -2024,43 +2046,31 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   let r = bg.r, g = bg.g, b = bg.b;
                   if (val > 0.0) {
                       const logC = Math.log1p(val) / logDen;
-                      const gammaC = Math.pow(logC, invGamma);
-                      let norm = acesToneMap(gammaC) / ACES_NORM;
-                      const rgb = applyTheme(theme, norm, bg);
-                      r = rgb.r; g = rgb.g; b = rgb.b;
+                      const norm = toneMap(logC);
+                      if (norm > 0) {
+                          const rgb = applyTheme(theme, norm, bg);
+                          r = rgb.r; g = rgb.g; b = rgb.b;
+                      }
                   }
                   if (useGrain && grainMap) {
                       const gx2 = (i % artWidth) & 255;
                       const gy2 = Math.floor(i / artWidth) & 255;
-                      const rawG = grainMap[gy2*256+gx2]; // 0..1 value noise
+                      const rawG = grainMap[gy2*256+gx2];
                       const lum = (r + g + b) / 765.0;
-                      const gs = 1.0 - lum * 0.75; // full grain in dark, 25% in bright
+                      const gs = 1.0 - lum * 0.75;
                       const grain = 0.88 + rawG * 0.12 * gs;
-                      r = r * grain;
-                      g = g * grain;
-                      b = b * grain;
+                      r = r * grain; g = g * grain; b = b * grain;
                   }
-                  data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255; 
+                  data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255;
               }
           } else {
-              // RGB Mode (Chain) - Improved Tone Mapping
               const len = buf.length / 3;
-              
               for (let i = 0; i < len; i++) {
-                  let rVal = buf[i*3];
-                  let gVal = buf[i*3+1];
-                  let bVal = buf[i*3+2];
                   const idx = i * 4;
-                  
-                  // DataShader-style: gamma on log-compressed value, ACES filmic, normalized
-                  rVal = acesToneMap(Math.pow(Math.log1p(rVal) / logDen, invGamma)) / ACES_NORM;
-                  gVal = acesToneMap(Math.pow(Math.log1p(gVal) / logDen, invGamma)) / ACES_NORM;
-                  bVal = acesToneMap(Math.pow(Math.log1p(bVal) / logDen, invGamma)) / ACES_NORM;
-                  
-                  data[idx] = rVal * 255; 
-                  data[idx+1] = gVal * 255; 
-                  data[idx+2] = bVal * 255; 
-                  data[idx+3] = 255;
+                  const r = toneMap(Math.log1p(buf[i*3])   / logDen);
+                  const g = toneMap(Math.log1p(buf[i*3+1]) / logDen);
+                  const b = toneMap(Math.log1p(buf[i*3+2]) / logDen);
+                  data[idx] = r * 255; data[idx+1] = g * 255; data[idx+2] = b * 255; data[idx+3] = 255;
               }
           }
           
@@ -2274,7 +2284,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           displayMax = 1.0; frameCounter = 0; if (latestBuffer) latestBuffer.fill(0);
           artCtx.clearRect(0, 0, artWidth, artHeight);
           if (!preserveHistory) { historyStack = []; ui.history.disabled = true; ui.history.value = 0; ui.historyCount.innerText = '0'; }
-          if(ui.simTimer) ui.simTimer.innerText = "t: 0.00"; 
+          if(ui.simTimer) ui.simTimer.innerText = "t: 0.00";
           renderDisplay();
       };
       window.saveSnapshot = () => { if (!latestBuffer) return; pushSnapshot(latestBuffer); };
@@ -2411,6 +2421,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (ui.bloom) ui.bloom.oninput = (e) => { if(ui.bloomVal) ui.bloomVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
           ui.zoom.oninput = (e) => { ui.zoomVal.textContent = e.target.value; send(); window.clearArt(false); };
           ui.gamma.oninput = (e) => { ui.gammaVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
+          ui.softness.oninput = (e) => { ui.softnessVal.textContent = parseFloat(e.target.value).toFixed(1); renderDisplay(); };
           
           ui.theme.onchange = () => {
               updateArtPanelBackground();
