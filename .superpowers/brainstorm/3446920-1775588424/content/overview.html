@@ -1,0 +1,123 @@
+<h2>ProteinCHAOS — Planned Improvements</h2>
+<p class="subtitle">Here's everything we're going to implement. Click any item to mark your priority.</p>
+
+<div class="section">
+  <h3>⚡ Performance (Physics Engine)</h3>
+  <div class="options" data-multiselect>
+    <div class="option" data-choice="celllist" onclick="toggleSelect(this)">
+      <div class="letter">1</div>
+      <div class="content">
+        <h3>Cell-list WCA repulsion</h3>
+        <p>Replace O(N²) loop with O(N) grid-based neighbor search. Enables repulsion for <b>all</b> system sizes (currently disabled above 1500 atoms). Expect 5–20× speedup for large proteins.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="rotmatrix" onclick="toggleSelect(this)">
+      <div class="letter">2</div>
+      <div class="content">
+        <h3>Precompute rotation matrix once per frame</h3>
+        <p>Currently recalculated per-bond in the accumulation loop. Precomputing saves ~30% of accumulateChaos CPU time for dense structures.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="noisecache" onclick="toggleSelect(this)">
+      <div class="letter">3</div>
+      <div class="content">
+        <h3>Pre-baked Gaussian noise cache</h3>
+        <p>Replace per-step Box-Muller with a 65536-entry Float32 ring buffer. Reduces random generation overhead by ~3×.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="transferable" onclick="toggleSelect(this)">
+      <div class="letter">4</div>
+      <div class="content">
+        <h3>Ping-pong transferable buffers</h3>
+        <p>Stop copying 33MB/frame. Use two Float32Arrays and transfer ownership back and forth. Near-zero memory allocation per frame.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🎨 Visual Effects & Rendering</h3>
+  <div class="options" data-multiselect>
+    <div class="option" data-choice="aces" onclick="toggleSelect(this)">
+      <div class="letter">5</div>
+      <div class="content">
+        <h3>ACES filmic tone mapping</h3>
+        <p>Replace log-compression with ACES curve. Produces richer highlight roll-off and deeper shadow detail — the look of film photography vs a webcam.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="depthcue" onclick="toggleSelect(this)">
+      <div class="letter">6</div>
+      <div class="content">
+        <h3>Enhanced depth cueing + atmospheric fog</h3>
+        <p>Use Z-depth for both brightness falloff AND color shift (cool→warm as atoms approach camera). Creates strong spatial depth illusion without 3D rendering.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="bloom2d" onclick="toggleSelect(this)">
+      <div class="letter">7</div>
+      <div class="content">
+        <h3>2D canvas glow / bloom pass</h3>
+        <p>Apply a fast CSS blur + compositing bloom effect on hot pixels. Gives the "long-exposure neon light" look that researchers love for cover art.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="autospin" onclick="toggleSelect(this)">
+      <div class="letter">8</div>
+      <div class="content">
+        <h3>Auto-rotation / slow tumble mode</h3>
+        <p>A toggle that slowly rotates the art-space Y-axis over time, continuously accumulating trails. Creates stunning corkscrew "time-lapse" renders.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="grain" onclick="toggleSelect(this)">
+      <div class="letter">9</div>
+      <div class="content">
+        <h3>Proper film grain (value noise)</h3>
+        <p>Replace sin-hash grain with a 256×256 tiled value-noise texture. Smoother, more organic grain that responds to brightness (brighter areas get less grain).</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🧬 Chain Coloring & Color System</h3>
+  <div class="options" data-multiselect>
+    <div class="option" data-choice="chainpicker" onclick="toggleSelect(this)">
+      <div class="letter">10</div>
+      <div class="content">
+        <h3>Per-chain color pickers (dynamic)</h3>
+        <p>Auto-detect chains on load, render a color swatch per chain in the sidebar. Click to open a native color picker. Works in both art-canvas and 3D view simultaneously.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="newpalettes" onclick="toggleSelect(this)">
+      <div class="letter">11</div>
+      <div class="content">
+        <h3>New curated palettes + colorblind-safe set</h3>
+        <p>Add "Publication" (Black/white-friendly), "Vivid" (high-saturation cover art), "Wong" (colorblind-safe 8-color), and "Pastel" (soft presentation colors).</p>
+      </div>
+    </div>
+    <div class="option" data-choice="residueprop" onclick="toggleSelect(this)">
+      <div class="letter">12</div>
+      <div class="content">
+        <h3>Residue-property coloring</h3>
+        <p>Color by residue type: hydrophobic (orange), polar (cyan), charged+ (blue), charged− (red), glycan (gold). Great for highlighting active sites.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔧 UX Fixes</h3>
+  <div class="options" data-multiselect>
+    <div class="option" data-choice="uxfixes" onclick="toggleSelect(this)">
+      <div class="letter">13</div>
+      <div class="content">
+        <h3>Bundle of small UX fixes</h3>
+        <p>• Chain-color mode no longer requires "chain-*" theme prefix — just a toggle<br>
+        • Zoom auto-fit on load<br>
+        • BAOAB integrator fix (second half-kick uses stale forces)<br>
+        • Adaptive substep cap raised from 20→40 for high-speed mode<br>
+        • "Copy to clipboard" button for snapshots</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:24px">Select the items you want included, then tell me in the terminal. All 13 are recommended — I can implement them all at once.</p>
