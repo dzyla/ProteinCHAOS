@@ -1,6 +1,6 @@
 <!--
 ProteinCHAOS: MD-inspired protein art engine
-Copyright (C) 2025 Dawid Zyla
+Copyright (C) 2026 Dawid Zyla
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>ProteinCHAOS v1.2</title>
+    <title>ProteinCHAOS v1.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script type="importmap">
       {
@@ -405,7 +405,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       <div id="sidebar">
         <div class="panel-header">
           <div class="flex items-center justify-between">
-            <h1 class="text-lg text-white brand-logo cursor-help" title="MD-inspired protein art generator. Work with PDB & AlphaFold databases and own PDB files. Larger structures may require more time for desired effects. Only PDB format is supported. Hints: For protein flexibility traces, use higher Temperature settings and lower the stiffness. Experiment with different values to achieve unique visual effects. To show glycosilation dynamics, keep the stiffness high and increase the temperature. High resolution renders will take longer to generate. Enjoy creating stunning protein art!">
+            <h1 class="text-lg text-white brand-logo cursor-help" title="MD-inspired protein art generator. Work with PDB & AlphaFold databases and own PDB files.">
               Protein<span class="brand-chaos">CHAOS</span>
             </h1>
             <a href="https://github.com/dzyla" target="_blank" class="text-[10px] bg-white/10 px-2 py-0.5 rounded text-gray-400 hover:text-white hover:bg-white/20 transition-colors">
@@ -426,20 +426,31 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
             </svg>
-            Source Data (PDB & AF db)
+            Source Data
           </div>
           
-          <!-- Checkbox Row -->
-          <div class="flex items-center gap-2 mb-3">
+          <div class="grid grid-cols-2 gap-2 mb-3">
              <label class="text-xs text-gray-400 flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
                <input type="checkbox" id="model-glycans" class="w-3 h-3 accent-blue-500" checked />
                Model Glycans
+             </label>
+             <label class="text-xs text-gray-400 flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
+               <input type="checkbox" id="model-cofactors" class="w-3 h-3 accent-blue-500" checked />
+               Model Cofactors
+             </label>
+             <label class="text-xs text-gray-400 flex items-center gap-2 cursor-pointer hover:text-white transition-colors" id="assembly-container" style="display:none">
+               <input type="checkbox" id="model-assembly" class="w-3 h-3 accent-blue-500" />
+               Bio Assembly
+             </label>
+             <label class="text-xs text-gray-400 flex items-center gap-2 cursor-pointer hover:text-white transition-colors" id="ensemble-container" style="display:none">
+               <input type="checkbox" id="model-ensemble" class="w-3 h-3 accent-blue-500" />
+               <span id="ensemble-text">Show Ensemble</span>
              </label>
           </div>
 
           <div class="flex gap-2 mb-2">
             <input type="text" id="pdb-id" value="2HHB" placeholder="ID / UniProt" class="w-24 text-center font-mono uppercase" />
-            <button onclick="fetchPDB()" class="btn btn-secondary flex-grow">Fetch</button>
+            <button onclick="fetchPDB()" class="btn btn-secondary flex-grow" aria-label="Fetch protein structure">Fetch</button>
           </div>
           <div id="fetch-error" class="text-red-400 text-[10px] mb-3 hidden font-mono p-2 bg-red-500/10 border border-red-500/20 rounded"></div>
           <div class="file-upload-wrapper mb-4">
@@ -449,9 +460,9 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               </svg>
               Upload File
             </button>
-            <input type="file" id="file-upload" accept=".pdb,.ent" onchange="handleFileUpload(this)" />
+            <input type="file" id="file-upload" accept=".pdb,.ent,.cif,.mmcif" onchange="handleFileUpload(this)" />
           </div>
-          <button onclick="toggleSim()" id="btn-toggle" class="btn btn-primary">Initialize & Start</button>
+          <button onclick="toggleSim()" id="btn-toggle" class="btn btn-primary" aria-label="Start or pause simulation">Initialize & Start</button>
         </div>
 
         <!-- 2. Physics -->
@@ -476,7 +487,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           </div>
         </div>
         
-        <!-- 3. Camera & Projection (OPTIMIZED) -->
+        <!-- 3. Camera & Projection -->
         <div class="control-section">
              <div class="section-title">
                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -547,6 +558,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               <option value="density" selected>Density (Theme)</option>
               <option value="chain">Chain Colors</option>
               <option value="residue">Residue Properties</option>
+              <option value="ss">Secondary Structure</option>
             </select>
           </div>
 
@@ -631,7 +643,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             </div>
           </div>
 
-          <!-- RESIDUE PROPERTIES SUB-PANEL -->
+          <!-- RESIDUE & SS SUB-PANEL -->
           <div id="residue-panel" style="display:none">
             <div class="mb-4">
               <label class="text-xs text-gray-500 block mb-1">Background</label>
@@ -684,6 +696,38 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             <div class="slider-header"><span>Bloom / Glow</span><span id="bloom-val" class="slider-val">0.15</span></div>
             <input type="range" id="art-bloom" min="0" max="0.5" value="0.15" step="0.01" />
           </div>
+          <div class="slider-container" title="Depth fog — distant atoms fade into background.">
+            <div class="slider-header"><span>Depth Fog</span><span id="depthfog-val" class="slider-val">0.30</span></div>
+            <input type="range" id="art-depthfog" min="0" max="1.0" value="0.30" step="0.01" />
+          </div>
+          <div class="slider-container" title="Photographic depth of field focus plane">
+            <div class="slider-header"><span>DoF Focus</span><span id="dof-focus-val" class="slider-val">0.50</span></div>
+            <input type="range" id="art-dof-focus" min="0" max="1" value="0.5" step="0.01" oninput="document.getElementById('dof-focus-val').textContent=parseFloat(this.value).toFixed(2); renderDisplay();" />
+          </div>
+          <div class="slider-container" title="Photographic depth of field blur strength">
+            <div class="slider-header"><span>DoF Strength</span><span id="dof-strength-val" class="slider-val">0.00</span></div>
+            <input type="range" id="art-dof-strength" min="0" max="1" value="0" step="0.01" oninput="document.getElementById('dof-strength-val').textContent=parseFloat(this.value).toFixed(2); renderDisplay();" />
+          </div>
+        </div>
+        
+        <!-- Timeline Animation (NEW) -->
+        <div class="control-section" id="timeline-section">
+            <div class="section-title">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Animation Timeline
+            </div>
+            <div class="flex gap-2 mb-2">
+                <button onclick="addKeyframe()" class="btn btn-secondary btn-xs flex-1">+ Keyframe</button>
+                <button onclick="playTimeline()" id="btn-play-tl" class="btn btn-primary btn-xs flex-1">Play</button>
+                <button onclick="clearTimeline()" class="btn btn-danger btn-xs">Clear</button>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-[10px] text-gray-500">Duration</span>
+                <input type="number" id="tl-duration" min="1" max="120" value="10" class="w-16 text-[10px]" onchange="timelineDuration = parseInt(this.value)" />
+                <span class="text-[10px] text-gray-500">sec</span>
+            </div>
+            <div id="keyframe-list" class="max-h-32 overflow-y-auto text-[10px] text-gray-400 font-mono mb-2 space-y-1"></div>
+            <input type="range" id="tl-scrubber" min="0" max="100" value="0" step="0.1" oninput="scrubTimeline(this.value)" class="mt-2" />
         </div>
 
         <!-- Chain Colors (populated dynamically on load) -->
@@ -702,17 +746,21 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               <span class="text-[10px] text-gray-500">frames</span>
             </div>
           </div>
+          <div class="flex gap-2 mb-3 flex-wrap">
+            <button onclick="clearArt(false)" class="btn btn-danger text-xs flex-1" aria-label="Clear art canvas">Clear</button>
+            <button onclick="saveSnapshot()" class="btn btn-secondary text-xs flex-1" aria-label="Save snapshot">Snapshot</button>
+            <button onclick="copyShareURL()" class="btn btn-secondary text-xs flex-1" title="Copy shareable URL" id="btn-share">Share</button>
+          </div>
           <div class="flex gap-2 mb-3">
-            <button onclick="clearArt(false)" class="btn btn-danger text-xs">Clear</button>
-            <button onclick="saveSnapshot()" class="btn btn-secondary text-xs">Snapshot</button>
-            <button onclick="copyToClipboard()" class="btn btn-secondary text-xs" title="Copy current canvas to clipboard">Copy</button>
+            <button onclick="copyToClipboard()" class="btn btn-secondary text-xs flex-1" title="Copy current canvas to clipboard" aria-label="Copy canvas to clipboard">Copy Img</button>
+            <button onclick="exportSVG()" class="btn btn-secondary text-xs flex-1" title="Export vectors">Export SVG</button>
           </div>
           <div class="flex items-center justify-between mb-4">
             <span class="text-xs text-gray-500">History Restore</span>
             <span id="history-count" class="text-xs font-mono text-gray-400">0</span>
           </div>
           <input type="range" id="history-slider" min="0" max="0" value="0" disabled class="mb-4" />
-          <button onclick="downloadHighRes()" class="btn btn-primary py-3">
+          <button onclick="downloadHighRes()" class="btn btn-primary py-3" aria-label="Download high resolution image">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -735,13 +783,14 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           </div>
           
           <div class="viewport-overlay">
-              <button class="vp-btn" onclick="toggleSim()" title="Play/Pause">
+              <button class="vp-btn" onclick="toggleSim()" title="Play/Pause" aria-label="Play or pause simulation">
                 <svg id="vp-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
               </button>
           </div>
         </div>
         <div id="art-panel">
-          <canvas id="art-canvas"></canvas>
+          <div id="accum-counter" class="absolute top-4 left-4 font-mono text-gray-200/30 font-bold text-xs pointer-events-none select-none">frames: 0</div>
+          <canvas id="art-canvas" role="img" aria-label="Protein chaos art accumulation buffer"></canvas>
           <div id="rec-progress"></div>
           
           <div id="rec-menu">
@@ -794,9 +843,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           FRICTION: 2.0,
           BASE_DT: 0.0015,
           BOND_R0: 1.0,
-          WCA_SIGMA: 1.0,
+          ANGLE_BASE_K: 40.0,
           WCA_EPSILON: 1.0,
-          WCA_CUTOFF_SQ: Math.pow(Math.pow(2, 1/6), 2),
           PROT_BASE_STIFFNESS: 32.0,
           PROT_BOND_BASE: 140.0,
           DNA_BASE_STIFFNESS: 533.3,
@@ -812,25 +860,36 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       let sentPositions = null;
       let sentBuffer = null;
 
-      const NOISE_SIZE = 65536;
+      const NOISE_SIZE = 262144;
       let noiseCache = null;
       let noiseCursor = 0;
-      const WCA_CELL_SIZE = 1.3;
-      let wcaCells = null;
+
+      // Flat-Array Hashing variables
+      let WCA_CELL_SIZE = 1.3;
+      let HASH_TABLE_SIZE = 65536;
+      let hashKeys, hashHeads, hashNext;
 
       let nAtoms = 0;
       let posX, posY, posZ;
+      let prevPosX, prevPosY, prevPosZ;
       let refX, refY, refZ;
       let velX, velY, velZ;
       let forceX, forceY, forceZ;
       let masses;
       let invMasses;
+      let flexibility;
       let isNucleic;
       let isGlycan;
+      let isCofactor;
+      let sigmas;
       let bonds = [];
       let restraints = [];
+      let angles = [];
+      let ensembleModels = [];
       let drawRestraints = [];
       let accumulationBuffer = null;
+      let depthBuffer = null;
+      let sentDepthBuffer = null;
       let atomColors = null;
       let colorMode = 'density';
 
@@ -848,12 +907,12 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           temp: 0.4, k: 20.0, speed: 1.0, zoom: 35.0, jitter: 0.8,
           intensity: 40, source: 'trace', decay: 0.98,
           rotX: 0, rotY: 0, rotZ: 0, panX: 0, panY: 0,
-          colorMode: 'density'
+          colorMode: 'density', depthFog: 0.3
       };
 
       let forceHighFPS = false;
       let wcaRebuildTick = 0;
-      let bufGeneration = 0; // incremented on resize/reinit so stale buf_return is discarded
+      let bufGeneration = 0; 
 
       function initNoiseCache() {
           noiseCache = new Float32Array(NOISE_SIZE);
@@ -874,26 +933,49 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           return noiseCache[noiseCursor++];
       }
 
+      // Flat-Array Hashing functions
       function wcaKey(cx, cy, cz) {
-          // Encode cell coordinates as a single integer (offset by 512 to handle negatives)
           return ((cx + 512) * 1048576 + (cy + 512) * 1024 + (cz + 512)) | 0;
       }
-      function buildWCACells() {
-          if (nAtoms === 0) { wcaCells = null; return; }
-          wcaCells = new Map();
+      function hashKey(cx, cy, cz) {
+          let h = 2166136261;
+          h = Math.imul(h ^ (cx + 512), 16777619);
+          h = Math.imul(h ^ (cy + 512), 16777619);
+          h = Math.imul(h ^ (cz + 512), 16777619);
+          return (h >>> 0) & (HASH_TABLE_SIZE - 1);
+      }
+      function buildCellsFlat() {
+          if (nAtoms === 0) return;
+          hashKeys.fill(-1);
+          hashHeads.fill(-1);
+          hashNext.fill(-1);
           for (let i = 0; i < nAtoms; i++) {
               const cx = Math.floor(posX[i] / WCA_CELL_SIZE);
               const cy = Math.floor(posY[i] / WCA_CELL_SIZE);
               const cz = Math.floor(posZ[i] / WCA_CELL_SIZE);
               const key = wcaKey(cx, cy, cz);
-              let cell = wcaCells.get(key);
-              if (!cell) { cell = []; wcaCells.set(key, cell); }
-              cell.push(i);
+              let bucket = hashKey(cx, cy, cz);
+              while (hashKeys[bucket] !== -1 && hashKeys[bucket] !== key) {
+                  bucket = (bucket + 1) & (HASH_TABLE_SIZE - 1);
+              }
+              hashKeys[bucket] = key;
+              hashNext[i] = hashHeads[bucket];
+              hashHeads[bucket] = i;
           }
+      }
+      function getCellHead(cx, cy, cz) {
+          const key = wcaKey(cx, cy, cz);
+          let bucket = hashKey(cx, cy, cz);
+          while (hashKeys[bucket] !== -1) {
+              if (hashKeys[bucket] === key) return hashHeads[bucket];
+              bucket = (bucket + 1) & (HASH_TABLE_SIZE - 1);
+          }
+          return -1;
       }
 
       function integrate() {
           if (nAtoms === 0) return;
+          for (let i = 0; i < nAtoms; i++) { prevPosX[i]=posX[i]; prevPosY[i]=posY[i]; prevPosZ[i]=posZ[i]; }
           const dt = CONF.BASE_DT;
           const gamma = CONF.FRICTION;
           const refMass = 1.0; 
@@ -927,17 +1009,21 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               posY[i] += 0.5 * dt * vy;
               posZ[i] += 0.5 * dt * vz;
               
-              const scale = noiseScale * Math.sqrt(invM);
-              vx = c * vx + scale * randNormal();
-              vy = c * vy + scale * randNormal();
-              vz = c * vz + scale * randNormal();
+              const flex = flexibility ? flexibility[i] : 1.0;
+              const scale = noiseScale * Math.sqrt(invM) * flex;
+              const vMag = Math.sqrt(vx*vx+vy*vy+vz*vz) || 1e-6;
+              const mom = Math.min(0.2, 0.1*flex);
+              const nx = scale*randNormal(), ny = scale*randNormal(), nz = scale*randNormal();
+              vx = c*vx + nx*(1.0-mom) + (vx/vMag)*Math.abs(nx)*mom;
+              vy = c*vy + ny*(1.0-mom) + (vy/vMag)*Math.abs(ny)*mom;
+              vz = c*vz + nz*(1.0-mom) + (vz/vMag)*Math.abs(nz)*mom;
               posX[i] += 0.5 * dt * vx;
               posY[i] += 0.5 * dt * vy;
               posZ[i] += 0.5 * dt * vz;
               velX[i] = vx; velY[i] = vy; velZ[i] = vz;
           }
 
-          calcForces(kProtFlex, kDNA, kProtBond, kBrace, kClamp, kScaffold, kAnchor, kPair, kTwist);
+          calcForces(kProtFlex, kDNA, kProtBond, kBrace, kClamp, kScaffold, kAnchor, kPair, kTwist, bondScale);
 
           let sx=0, sy=0, sz=0;
           for (let i = 0; i < nAtoms; i++) {
@@ -969,7 +1055,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               tz += posX[i] * refY[i] - posY[i] * refX[i];
           }
           if (isNaN(tx)) return;
-          const factor = 0.00005; 
+          const factor = 0.00005 / Math.max(1, nAtoms / 500); 
           const rotX = tx * factor;
           const rotY = ty * factor;
           const rotZ = tz * factor;
@@ -986,7 +1072,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           }
       }
 
-      function calcForces(kProtFlex, kDNA, kProtBond, kBrace, kClamp, kScaffold, kAnchor, kPair, kTwist) {
+      function calcForces(kProtFlex, kDNA, kProtBond, kBrace, kClamp, kScaffold, kAnchor, kPair, kTwist, bondScale) {
           if (nAtoms === 0) return;
           forceX.fill(0); forceY.fill(0); forceZ.fill(0);
 
@@ -1002,6 +1088,31 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               const fx = (dx/r)*fClamped, fy = (dy/r)*fClamped, fz = (dz/r)*fClamped;
               forceX[i] += fx; forceY[i] += fy; forceZ[i] += fz;
               forceX[j] -= fx; forceY[j] -= fy; forceZ[j] -= fz;
+          }
+
+          // Angle forces (Secondary Structure Preservation)
+          const kAngle = CONF.ANGLE_BASE_K * bondScale;
+          for (let a = 0; a < angles.length; a++) {
+              const i = angles[a].i, j = angles[a].j, k = angles[a].k, theta0 = angles[a].theta0;
+              const v1x = posX[i]-posX[j], v1y = posY[i]-posY[j], v1z = posZ[i]-posZ[j];
+              const v2x = posX[k]-posX[j], v2y = posY[k]-posY[j], v2z = posZ[k]-posZ[j];
+              const r1sq = v1x*v1x+v1y*v1y+v1z*v1z;
+              const r2sq = v2x*v2x+v2y*v2y+v2z*v2z;
+              const r1 = Math.sqrt(r1sq) || 1e-6, r2 = Math.sqrt(r2sq) || 1e-6;
+              const cosTheta = (v1x*v2x+v1y*v2y+v1z*v2z) / (r1*r2);
+              const cosThetaClamped = Math.max(-0.999, Math.min(0.999, cosTheta));
+              const cosTheta0 = Math.cos(theta0);
+              const dUdCos = kAngle * (cosThetaClamped - cosTheta0);
+              const invR1R2 = 1.0/(r1*r2);
+              const f1x = dUdCos * (v2x*invR1R2 - cosThetaClamped*v1x/(r1sq));
+              const f1y = dUdCos * (v2y*invR1R2 - cosThetaClamped*v1y/(r1sq));
+              const f1z = dUdCos * (v2z*invR1R2 - cosThetaClamped*v1z/(r1sq));
+              const f3x = dUdCos * (v1x*invR1R2 - cosThetaClamped*v2x/(r2sq));
+              const f3y = dUdCos * (v1y*invR1R2 - cosThetaClamped*v2y/(r2sq));
+              const f3z = dUdCos * (v1z*invR1R2 - cosThetaClamped*v2z/(r2sq));
+              forceX[i] -= f1x; forceY[i] -= f1y; forceZ[i] -= f1z;
+              forceX[k] -= f3x; forceY[k] -= f3y; forceZ[k] -= f3z;
+              forceX[j] += f1x+f3x; forceY[j] += f1y+f3y; forceZ[j] += f1z+f3z;
           }
 
           for (let rIdx = 0; rIdx < restraints.length; rIdx++) {
@@ -1028,8 +1139,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           const GLY_REPULSION_SQ = GLY_REPULSION_DIST * GLY_REPULSION_DIST;
           const GLY_REPULSION_STRENGTH = 80.0;
 
-          // Glycan repulsion: use WCA cell list instead of O(N²)
-          if (wcaCells) {
+          // Glycan repulsion
+          if (hashKeys) {
               for (let i = 0; i < nAtoms; i++) {
                   if (!isGlycan[i]) continue;
                   const cx = Math.floor(posX[i] / WCA_CELL_SIZE);
@@ -1038,19 +1149,14 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   for (let ddx = -1; ddx <= 1; ddx++) {
                       for (let ddy = -1; ddy <= 1; ddy++) {
                           for (let ddz = -1; ddz <= 1; ddz++) {
-                              const cell = wcaCells.get(wcaKey(cx+ddx, cy+ddy, cz+ddz));
-                              if (!cell) continue;
-                              for (let ki = 0; ki < cell.length; ki++) {
-                                  const j = cell[ki];
+                              for (let j = getCellHead(cx+ddx, cy+ddy, cz+ddz); j !== -1; j = hashNext[j]) {
                                   if (j === i || isGlycan[j]) continue;
-                                  const dx = posX[i] - posX[j];
-                                  const dy = posY[i] - posY[j];
-                                  const dz = posZ[i] - posZ[j];
+                                  const dx = posX[i] - posX[j], dy = posY[i] - posY[j], dz = posZ[i] - posZ[j];
                                   const r2 = dx*dx + dy*dy + dz*dz;
                                   if (r2 > GLY_REPULSION_SQ || r2 < 0.0001) continue;
                                   const r = Math.sqrt(r2);
                                   const f = GLY_REPULSION_STRENGTH * (GLY_REPULSION_DIST - r);
-                                  const fx = (dx/r) * f, fy = (dy/r) * f, fz = (dz/r) * f;
+                                  const fx = (dx/r)*f, fy = (dy/r)*f, fz = (dz/r)*f;
                                   forceX[i] += fx; forceY[i] += fy; forceZ[i] += fz;
                                   forceX[j] -= fx; forceY[j] -= fy; forceZ[j] -= fz;
                               }
@@ -1060,32 +1166,30 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               }
           }
 
-          // WCA excluded-volume via cell list (O(N), works at all system sizes)
-          if (wcaCells) {
-              const cutoffSq = CONF.WCA_CUTOFF_SQ;
+          // WCA excluded-volume (Residue Specific)
+          if (hashKeys) {
               const epsilon  = CONF.WCA_EPSILON;
               for (let i = 0; i < nAtoms; i++) {
                   const cx = Math.floor(posX[i] / WCA_CELL_SIZE);
                   const cy = Math.floor(posY[i] / WCA_CELL_SIZE);
                   const cz = Math.floor(posZ[i] / WCA_CELL_SIZE);
-                  for (let dx = -1; dx <= 1; dx++) {
-                      for (let dy = -1; dy <= 1; dy++) {
-                          for (let dz = -1; dz <= 1; dz++) {
-                              const cell = wcaCells.get(wcaKey(cx+dx, cy+dy, cz+dz));
-                              if (!cell) continue;
-                              for (let ki = 0; ki < cell.length; ki++) {
-                                  const j = cell[ki];
+                  const si = sigmas[i];
+                  for (let ddx = -1; ddx <= 1; ddx++) {
+                      for (let ddy = -1; ddy <= 1; ddy++) {
+                          for (let ddz = -1; ddz <= 1; ddz++) {
+                              for (let j = getCellHead(cx+ddx, cy+ddy, cz+ddz); j !== -1; j = hashNext[j]) {
                                   if (j <= i || Math.abs(i - j) <= 1) continue;
-                                  const ddx = posX[i] - posX[j];
-                                  const ddy = posY[i] - posY[j];
-                                  const ddz = posZ[i] - posZ[j];
-                                  const r2 = ddx*ddx + ddy*ddy + ddz*ddz;
-                                  if (r2 < cutoffSq && r2 > 1e-5) {
-                                      const r2i = 1.0 / r2;
+                                  const dx = posX[i] - posX[j], dy = posY[i] - posY[j], dz = posZ[i] - posZ[j];
+                                  const r2 = dx*dx + dy*dy + dz*dz;
+                                  const sigma_ij = (si + sigmas[j]) * 0.5;
+                                  const s_sq = sigma_ij * sigma_ij;
+                                  const cutoffSq_ij = s_sq * 1.2599; // 2^(1/3) * sigma^2
+                                  if (r2 < cutoffSq_ij && r2 > 1e-5) {
+                                      const r2i = s_sq / r2;
                                       const r6i = r2i * r2i * r2i;
-                                      const fS = Math.min((24*epsilon*r2i)*(2*r6i*r6i - r6i), 500.0);
-                                      forceX[i] += ddx*fS; forceY[i] += ddy*fS; forceZ[i] += ddz*fS;
-                                      forceX[j] -= ddx*fS; forceY[j] -= ddy*fS; forceZ[j] -= ddz*fS;
+                                      const fS = Math.min((24*epsilon/r2)*s_sq*(2*r6i*r6i - r6i), 500.0);
+                                      forceX[i] += dx*fS; forceY[i] += dy*fS; forceZ[i] += dz*fS;
+                                      forceX[j] -= dx*fS; forceY[j] -= dy*fS; forceZ[j] -= dz*fS;
                                   }
                               }
                           }
@@ -1099,7 +1203,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (!accumulationBuffer || decayFactor >= 0.9999) return;
           const len = accumulationBuffer.length;
           if (len === 0) return;
-          const chunkSize = Math.min(FADER_BLOCK_SIZE, len);
+          const chunkSize = Math.min(len, Math.max(FADER_BLOCK_SIZE, len >>> 2));
           let processed = 0;
           while (processed < chunkSize) {
               if (fadeCursor >= len) fadeCursor = 0;
@@ -1114,91 +1218,146 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
 
       function accumulateChaos() {
           if (!accumulationBuffer || nAtoms === 0) return;
-          const cxScreen = artWidth * 0.5;
-          const cyScreen = artHeight * 0.5;
+          const cxScreen = artWidth*0.5, cyScreen = artHeight*0.5;
           const list = params.source === 'trace' ? bonds : restraints;
-          const zoom = params.zoom;
-          const jitter = params.jitter;
-          const intensity = params.intensity;
+          const zoom = params.zoom, jitter = params.jitter, intensity = params.intensity;
           const w = artWidth, h = artHeight;
-          const panX = params.panX || 0;
-          const panY = params.panY || 0;
+          const panX = params.panX||0, panY = params.panY||0;
           const useColor = (colorMode === 'chain' && atomColors);
           const channels = useColor ? 3 : 1;
+          const depthFog = params.depthFog || 0.3;
 
-          // Precompute combined rotation matrix R = Rz·Ry·Rx (9 trig calls once vs per-bond)
-          const radX = (params.rotX || 0) * 0.0174533;
-          const radY = (params.rotY || 0) * 0.0174533;
-          const radZ = (params.rotZ || 0) * 0.0174533;
-          const cxr = Math.cos(radX), sxr = Math.sin(radX);
-          const cyr = Math.cos(radY), syr = Math.sin(radY);
-          const czr = Math.cos(radZ), szr = Math.sin(radZ);
-          // R = Rz * Ry * Rx
-          const m00 = cyr*czr,              m01 = czr*sxr*syr - cxr*szr, m02 = cxr*czr*syr + sxr*szr;
-          const m10 = cyr*szr,              m11 = cxr*czr + sxr*syr*szr,  m12 = cxr*syr*szr - czr*sxr;
-          const m20 = -syr,                 m21 = cyr*sxr,                m22 = cxr*cyr;
+          const radX=(params.rotX||0)*0.0174533, radY=(params.rotY||0)*0.0174533, radZ=(params.rotZ||0)*0.0174533;
+          const cxr=Math.cos(radX),sxr=Math.sin(radX);
+          const cyr=Math.cos(radY),syr=Math.sin(radY);
+          const czr=Math.cos(radZ),szr=Math.sin(radZ);
+          const m00=cyr*czr, m01=czr*sxr*syr-cxr*szr, m02=cxr*czr*syr+sxr*szr;
+          const m10=cyr*szr, m11=cxr*czr+sxr*syr*szr, m12=cxr*syr*szr-czr*sxr;
+          const m20=-syr,    m21=cyr*sxr,               m22=cxr*cyr;
 
-          for (let k = 0; k < list.length; k++) {
-              const link = list[k];
-              let weight = link.visualWeight !== undefined ? link.visualWeight : 1.0;
-              // Filter faint restraints to avoid "whole network" mess
-              if (weight < 0.1) continue; 
+          let zMin=1e9, zMax=-1e9;
+          for (let i=0; i<nAtoms; i++) {
+              const rz = m20*posX[i]+m21*posY[i]+m22*posZ[i];
+              if (rz<zMin) zMin=rz; if (rz>zMax) zMax=rz;
+          }
+          const zRange = (zMax-zMin)||1.0;
 
-              const i = link.i, j = link.j;
-              let x1 = posX[i], y1 = posY[i], z1 = posZ[i];
-              let x2 = posX[j], y2 = posY[j], z2 = posZ[j];
+          // Process primary dynamics + ensemble models if present
+          const runs = ensembleModels.length > 0 ? ensembleModels.length + 1 : 1;
+          
+          for (let run = 0; run < runs; run++) {
+              const isGhost = run > 0;
+              const pX = isGhost ? ensembleModels[run-1].x : posX;
+              const pY = isGhost ? ensembleModels[run-1].y : posY;
+              const pZ = isGhost ? ensembleModels[run-1].z : posZ;
+              const oX = isGhost ? ensembleModels[run-1].x : prevPosX;
+              const oY = isGhost ? ensembleModels[run-1].y : prevPosY;
+              const oZ = isGhost ? ensembleModels[run-1].z : prevPosZ;
               
-              // Rotate P1 via precomputed matrix (18 mul vs 24 mul per bond, no per-bond trig)
-              const rx1 = m00*x1 + m01*y1 + m02*z1;
-              const ry1 = m10*x1 + m11*y1 + m12*z1;
-              const rz1 = m20*x1 + m21*y1 + m22*z1;
-              x1 = rx1; y1 = ry1; z1 = rz1;
+              const ghostMod = isGhost ? 0.3 : 1.0; // ghost alpha
 
-              // Rotate P2
-              const rx2 = m00*x2 + m01*y2 + m02*z2;
-              const ry2 = m10*x2 + m11*y2 + m12*z2;
-              const rz2 = m20*x2 + m21*y2 + m22*z2;
-              x2 = rx2; y2 = ry2; z2 = rz2;
-
-              // Project
-              const sx1 = x1 * zoom + cxScreen + panX;
-              const sy1 = y1 * zoom + cyScreen + panY;
-              const sx2 = x2 * zoom + cxScreen + panX;
-              const sy2 = y2 * zoom + cyScreen + panY;
-
-              if ((sx1 < 0 && sx2 < 0) || (sx1 > w && sx2 > w) || (sy1 < 0 && sy2 < 0) || (sy1 > h && sy2 > h)) continue;
-
-              const dx2d = sx2 - sx1, dy2d = sy2 - sy1;
-              const dist = Math.hypot(dx2d, dy2d);
-              const steps = Math.max(1, Math.floor(dist));
-              if (steps > 2000) continue; 
-              
-              let r1, g1, b1, r2, g2, b2;
-              if (useColor) {
-                  r1 = atomColors[i*3]; g1 = atomColors[i*3+1]; b1 = atomColors[i*3+2];
-                  r2 = atomColors[j*3]; g2 = atomColors[j*3+1]; b2 = atomColors[j*3+2];
-              }
-
-              for (let s = 0; s < steps; s++) {
-                  const t = Math.random();
-                  const px = sx1 + dx2d * t + (Math.random() - 0.5) * jitter;
-                  const py = sy1 + dy2d * t + (Math.random() - 0.5) * jitter;
-                  const ix = px | 0, iy = py | 0;
-                  if (ix >= 0 && ix < w && iy >= 0 && iy < h) {
-                      const z = z1 * (1 - t) + z2 * t;
-                      const depthCue = Math.min(2.5, Math.max(0.05, 1.0 + z * 0.12));
-                      const idx = (iy * w + ix) * channels;
-                      
-                      const val = intensity * depthCue * weight;
-                      if (useColor) {
-                          const cr = r1 + (r2-r1)*t;
-                          const cg = g1 + (g2-g1)*t;
-                          const cb = b1 + (b2-b1)*t;
-                          accumulationBuffer[idx] += val * cr;
-                          accumulationBuffer[idx+1] += val * cg;
-                          accumulationBuffer[idx+2] += val * cb;
-                      } else {
-                          accumulationBuffer[idx] += val;
+              for (let k=0; k<list.length; k++) {
+                  const link = list[k];
+                  let weight = link.visualWeight !== undefined ? link.visualWeight : 1.0;
+                  if (weight < 0.1) continue;
+                  const i=link.i, j=link.j;
+                  const rx1=m00*pX[i]+m01*pY[i]+m02*pZ[i];
+                  const ry1=m10*pX[i]+m11*pY[i]+m12*pZ[i];
+                  const rz1=m20*pX[i]+m21*pY[i]+m22*pZ[i];
+                  const rx2=m00*pX[j]+m01*pY[j]+m02*pZ[j];
+                  const ry2=m10*pX[j]+m11*pY[j]+m12*pZ[j];
+                  const rz2=m20*pX[j]+m21*pY[j]+m22*pZ[j];
+                  const sx1=rx1*zoom+cxScreen+panX, sy1=ry1*zoom+cyScreen+panY;
+                  const sx2=rx2*zoom+cxScreen+panX, sy2=ry2*zoom+cyScreen+panY;
+                  if ((sx1<0&&sx2<0)||(sx1>w&&sx2>w)||(sy1<0&&sy2<0)||(sy1>h&&sy2>h)) continue;
+                  const dx2d=sx2-sx1, dy2d=sy2-sy1;
+                  const dist=Math.hypot(dx2d,dy2d);
+                  // Reduced steps for splatting compensation
+                  const steps=Math.max(1,Math.floor(dist * 0.6));
+                  if (steps>2000) continue;
+                  let r1,g1,b1,r2,g2,b2;
+                  if (useColor) {
+                      r1=atomColors[i*3];g1=atomColors[i*3+1];b1=atomColors[i*3+2];
+                      r2=atomColors[j*3];g2=atomColors[j*3+1];b2=atomColors[j*3+2];
+                  }
+                  
+                  const hasPrev = !isGhost && oX && stepCount > 1;
+                  const motionPasses = hasPrev ? 2 : 1;
+                  for (let mp=0; mp<motionPasses; mp++) {
+                      let lsx1=sx1,lsy1=sy1,lsx2=sx2,lsy2=sy2,lrz1=rz1,lrz2=rz2,mw=1.0;
+                      if (mp===1) {
+                          const prx1=m00*oX[i]+m01*oY[i]+m02*oZ[i];
+                          const pry1=m10*oX[i]+m11*oY[i]+m12*oZ[i];
+                          const prz1=m20*oX[i]+m21*oY[i]+m22*oZ[i];
+                          const prx2=m00*oX[j]+m01*oY[j]+m02*oZ[j];
+                          const pry2=m10*oX[j]+m11*oY[j]+m12*oZ[j];
+                          const prz2=m20*oX[j]+m21*oY[j]+m22*oZ[j];
+                          lsx1=(rx1+prx1)*0.5*zoom+cxScreen+panX;
+                          lsy1=(ry1+pry1)*0.5*zoom+cyScreen+panY;
+                          lsx2=(rx2+prx2)*0.5*zoom+cxScreen+panX;
+                          lsy2=(ry2+pry2)*0.5*zoom+cyScreen+panY;
+                          lrz1=(rz1+prz1)*0.5; lrz2=(rz2+prz2)*0.5;
+                          mw=0.5;
+                      }
+                      const ldx=lsx2-lsx1, ldy=lsy2-lsy1;
+                      const lSteps=Math.max(1,Math.floor(Math.hypot(ldx,ldy) * 0.6));
+                      for (let s=0; s<lSteps; s++) {
+                          const t=Math.random();
+                          const z=lrz1*(1-t)+lrz2*t;
+                          const zNorm=(z-zMin)/zRange;
+                          const fogFactor=Math.exp(-depthFog*4.0*zNorm);
+                          const depthScatter=1.0+depthFog*3.0*zNorm;
+                          const depthCue=fogFactor*(0.5+0.5*(1.0-zNorm));
+                          const totalJitter=jitter*depthScatter;
+                          const px=lsx1+ldx*t+(Math.random()-0.5)*totalJitter;
+                          const py=lsy1+ldy*t+(Math.random()-0.5)*totalJitter;
+                          const ix = Math.floor(px), iy = Math.floor(py);
+                          if (w > 2000) {
+                              // 3x3 Gaussian Splatting
+                              const GAUSS = [0.0625, 0.125, 0.0625, 0.125, 0.25, 0.125, 0.0625, 0.125, 0.0625];
+                              let kIdx = 0;
+                              for(let ky=-1; ky<=1; ky++) {
+                                  for(let kx=-1; kx<=1; kx++) {
+                                      const sx = ix+kx, sy = iy+ky;
+                                      const gW = GAUSS[kIdx++];
+                                      if (sx>=0 && sx<w && sy>=0 && sy<h) {
+                                          const pixelIdx = sy*w+sx;
+                                          const sIdx = pixelIdx*channels;
+                                          const val=intensity*depthCue*weight*mw*ghostMod*gW;
+                                          if (useColor) {
+                                              const cr=r1+(r2-r1)*t,cg=g1+(g2-g1)*t,cb=b1+(b2-b1)*t;
+                                              accumulationBuffer[sIdx]+=val*cr;
+                                              accumulationBuffer[sIdx+1]+=val*cg;
+                                              accumulationBuffer[sIdx+2]+=val*cb;
+                                          } else { accumulationBuffer[sIdx]+=val; }
+                                          if (depthBuffer) depthBuffer[pixelIdx] = depthBuffer[pixelIdx] * 0.95 + zNorm * 0.05;
+                                      }
+                                  }
+                              }
+                          } else {
+                              // 2x2 Sub-pixel Splatting
+                              const fx = px - ix, fy = py - iy;
+                              const w00 = (1-fx)*(1-fy), w10 = fx*(1-fy);
+                              const w01 = (1-fx)*fy,     w11 = fx*fy;
+                              const sxArr = [ix, ix+1, ix, ix+1];
+                              const syArr = [iy, iy, iy+1, iy+1];
+                              const wArr = [w00, w10, w01, w11];
+                              for (let sp = 0; sp < 4; sp++) {
+                                  const sx = sxArr[sp], sy = syArr[sp];
+                                  if (sx>=0 && sx<w && sy>=0 && sy<h) {
+                                      const pixelIdx = sy*w+sx;
+                                      const sIdx = pixelIdx*channels;
+                                      const val=intensity*depthCue*weight*mw*ghostMod*wArr[sp];
+                                      if (useColor) {
+                                          const cr=r1+(r2-r1)*t,cg=g1+(g2-g1)*t,cb=b1+(b2-b1)*t;
+                                          accumulationBuffer[sIdx]+=val*cr;
+                                          accumulationBuffer[sIdx+1]+=val*cg;
+                                          accumulationBuffer[sIdx+2]+=val*cb;
+                                      } else { accumulationBuffer[sIdx]+=val; }
+                                      if (depthBuffer) depthBuffer[pixelIdx] = depthBuffer[pixelIdx] * 0.95 + zNorm * 0.05;
+                                  }
+                              }
+                          }
                       }
                   }
               }
@@ -1211,6 +1370,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                const atoms = msg.atoms || [];
                nAtoms = atoms.length;
                bonds = msg.bonds || [];
+               angles = msg.angles || [];
                restraints = [];
                if(msg.restraints) restraints = restraints.concat(msg.restraints);
                if(msg.colors) atomColors = new Float32Array(msg.colors);
@@ -1218,35 +1378,96 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                artWidth = msg.width; artHeight = msg.height;
                const channels = (colorMode === 'chain') ? 3 : 1;
                accumulationBuffer = new Float32Array(artWidth * artHeight * channels);
+               depthBuffer = new Float32Array(artWidth * artHeight);
                
                fadeCursor = 0;
                sentPositions = new Float32Array(nAtoms * 3);
                sentBuffer = new Float32Array(artWidth * artHeight * channels);
+               sentDepthBuffer = new Float32Array(artWidth * artHeight);
                bufGeneration++;
 
                posX = new Float32Array(nAtoms); posY = new Float32Array(nAtoms); posZ = new Float32Array(nAtoms);
+               prevPosX = new Float32Array(nAtoms); prevPosY = new Float32Array(nAtoms); prevPosZ = new Float32Array(nAtoms);
                refX = new Float32Array(nAtoms); refY = new Float32Array(nAtoms); refZ = new Float32Array(nAtoms);
                velX = new Float32Array(nAtoms); velY = new Float32Array(nAtoms); velZ = new Float32Array(nAtoms);
                forceX = new Float32Array(nAtoms); forceY = new Float32Array(nAtoms); forceZ = new Float32Array(nAtoms);
                isNucleic = new Int8Array(nAtoms);
                isGlycan = new Int8Array(nAtoms);
+               isCofactor = new Int8Array(nAtoms);
                masses = new Float32Array(nAtoms);
                invMasses = new Float32Array(nAtoms);
+               flexibility = new Float32Array(nAtoms);
+               sigmas = new Float32Array(nAtoms);
 
+               let maxSigma = 1.0;
                for (let i = 0; i < nAtoms; i++) {
                    const a = atoms[i];
                    posX[i] = a.x; posY[i] = a.y; posZ[i] = a.z;
                    refX[i] = a.x; refY[i] = a.y; refZ[i] = a.z;
                    isNucleic[i] = a.isNucleic ? 1 : 0;
                    isGlycan[i] = a.isGlycan ? 1 : 0;
+                   isCofactor[i] = a.isCofactor ? 1 : 0;
                    masses[i] = a.simMass || 1.0;
                    invMasses[i] = 1.0 / masses[i];
+                   prevPosX[i] = a.x; prevPosY[i] = a.y; prevPosZ[i] = a.z;
+                   sigmas[i] = a.sigma || 1.0;
+                   if (sigmas[i] > maxSigma) maxSigma = sigmas[i];
                }
+               WCA_CELL_SIZE = maxSigma * 1.3;
+               
+               let ts = 16384; while(ts < nAtoms * 2) ts *= 2;
+               HASH_TABLE_SIZE = ts;
+               hashKeys = new Int32Array(HASH_TABLE_SIZE);
+               hashHeads = new Int32Array(HASH_TABLE_SIZE);
+               hashNext = new Int32Array(nAtoms);
+
+               // Flexibility from Contact Density + B-factor/pLDDT blending
+               const FLEX_RADIUS_SQ = 9.0;
+               const hasBfactors = atoms.some(a => a.bfactor > 0);
+               let bMin = Infinity, bMax = -Infinity;
+               if (hasBfactors) {
+                   for (let i = 0; i < nAtoms; i++) {
+                       const b = atoms[i].bfactor || 0;
+                       if (b < bMin) bMin = b; if (b > bMax) bMax = b;
+                   }
+               }
+               const bRange = (bMax - bMin) || 1;
+
+               for (let fi = 0; fi < nAtoms; fi++) {
+                   let contacts = 0;
+                   const st = Math.max(1, Math.floor(nAtoms / 400));
+                   for (let fj = 0; fj < nAtoms; fj += st) {
+                       if (fj === fi) continue;
+                       const dx = posX[fi]-posX[fj], dy = posY[fi]-posY[fj], dz = posZ[fi]-posZ[fj];
+                       if (dx*dx+dy*dy+dz*dz < FLEX_RADIUS_SQ) contacts++;
+                   }
+                   const nc = Math.min(contacts*st/nAtoms*50, 10);
+                   let baseFlex = Math.max(0.3, 2.0-nc*0.17);
+                   
+                   if (hasBfactors) {
+                       const bNorm = ((atoms[fi].bfactor || bMin) - bMin) / bRange;
+                       let bFlex = atoms[fi].isAlphaFold ? 0.3 + (1.0 - bNorm)*1.7 : 0.3 + bNorm*1.7;
+                       baseFlex = 0.7 * bFlex + 0.3 * baseFlex;
+                   }
+                   flexibility[fi] = baseFlex;
+                   if (isGlycan[fi]) flexibility[fi] = Math.max(flexibility[fi], 1.5);
+               }
+
                centerX = 0; centerY = 0; centerZ = 0;
-               stepCount = 0; needsFrame = true; simTime = 0.0;
+               stepCount = 0; needsFrame = true; simTime = 0.0; frameCounter = 0;
                initNoiseCache();
-               buildWCACells();
+               buildCellsFlat();
                postMessage({ type: 'state', running: isRunning });
+           } else if (msg.type === 'ensemble') {
+               // Load Ghost Models
+               ensembleModels = [];
+               if (msg.models) {
+                   for (let m of msg.models) {
+                       const mX = new Float32Array(nAtoms), mY = new Float32Array(nAtoms), mZ = new Float32Array(nAtoms);
+                       for (let i=0; i<nAtoms; i++) { mX[i] = m[i].x; mY[i] = m[i].y; mZ[i] = m[i].z; }
+                       ensembleModels.push({x: mX, y: mY, z: mZ});
+                   }
+               }
            } else if (msg.type === 'colors') {
                if(msg.data) atomColors = new Float32Array(msg.data);
                needsFrame = true;
@@ -1255,7 +1476,9 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                    colorMode = msg.data.colorMode;
                    const channels = (colorMode === 'chain') ? 3 : 1;
                    accumulationBuffer = new Float32Array(artWidth * artHeight * channels);
+                   depthBuffer = new Float32Array(artWidth * artHeight);
                    sentBuffer = new Float32Array(artWidth * artHeight * channels);
+                   sentDepthBuffer = new Float32Array(artWidth * artHeight);
                    bufGeneration++;
                    fadeCursor = 0; needsFrame = true;
                }
@@ -1266,12 +1489,15 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                forceHighFPS = false;
            } else if (msg.type === 'clear') {
                if (accumulationBuffer) accumulationBuffer.fill(0);
-               fadeCursor = 0; needsFrame = true; simTime = 0.0;
+               if (depthBuffer) depthBuffer.fill(0);
+               fadeCursor = 0; needsFrame = true; simTime = 0.0; frameCounter = 0;
            } else if (msg.type === 'resize') {
                artWidth = msg.width; artHeight = msg.height;
                const channels = (colorMode === 'chain') ? 3 : 1;
                accumulationBuffer = new Float32Array(artWidth * artHeight * channels);
+               depthBuffer = new Float32Array(artWidth * artHeight);
                sentBuffer = new Float32Array(artWidth * artHeight * channels);
+               sentDepthBuffer = new Float32Array(artWidth * artHeight);
                bufGeneration++;
                fadeCursor = 0; needsFrame = true;
            } else if (msg.type === 'start') {
@@ -1279,19 +1505,24 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
            } else if (msg.type === 'pause') {
                isRunning = false; needsFrame = true; postMessage({ type: 'state', running: false });
            } else if (msg.type === 'buf_return') {
-               // Re-adopt only if generation matches (guards against stale returns after resize/reinit)
                if (msg.gen === bufGeneration) {
                    sentBuffer = new Float32Array(msg.buffer, 0, artWidth * artHeight * ((colorMode === 'chain') ? 3 : 1));
+                   if (msg.depthBuffer) {
+                       sentDepthBuffer = new Float32Array(msg.depthBuffer, 0, artWidth * artHeight);
+                   }
                }
            } else if (msg.type === 'tick') {
                if (nAtoms === 0) { postMessage({ type: 'idle' }); return; }
                if (!isRunning && !needsFrame) { postMessage({ type: 'idle' }); return; }
                const dtInput = msg.dt || 16.6;
+               if (dtInput > 25) displayFrameSkip = 3;
+               else if (dtInput > 18) displayFrameSkip = 2;
+               else displayFrameSkip = 1;
                if (isRunning) {
                    const targetSteps = (dtInput * params.speed) / 1.5; 
                    const substeps = Math.max(1, Math.min(40, Math.round(targetSteps)));
                    for (let i = 0; i < substeps; i++) integrate();
-                   if (++wcaRebuildTick >= 3) { wcaRebuildTick = 0; buildWCACells(); }
+                   if (++wcaRebuildTick >= 3) { wcaRebuildTick = 0; buildCellsFlat(); }
                    needsFrame = true;
                }
                if (accumulationBuffer && (isRunning || needsFrame)) {
@@ -1308,13 +1539,16 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               }
               frameCounter++;
               const shouldSendImage = forceHighFPS || (frameCounter % displayFrameSkip === 0) || needsFrame;
-              if (shouldSendImage && accumulationBuffer && nAtoms > 0 && sentBuffer !== null) {
+              if (shouldSendImage && accumulationBuffer && nAtoms > 0 && sentBuffer !== null && sentDepthBuffer !== null) {
                   sentBuffer.set(accumulationBuffer);
+                  sentDepthBuffer.set(depthBuffer);
                   const toSend = sentBuffer;
-                  sentBuffer = null; // in-flight until main returns it
-                  postMessage({ type: 'update', positions: sentPositions, buffer: toSend, time: simTime, gen: bufGeneration }, [toSend.buffer]);
+                  const depthToSend = sentDepthBuffer;
+                  sentBuffer = null; 
+                  sentDepthBuffer = null;
+                  postMessage({ type: 'update', positions: sentPositions, buffer: toSend, depthBuffer: depthToSend, time: simTime, gen: bufGeneration, frames: frameCounter }, [toSend.buffer, depthToSend.buffer]);
               } else {
-                  postMessage({ type: 'update', positions: sentPositions, time: simTime });
+                  postMessage({ type: 'update', positions: sentPositions, time: simTime, frames: frameCounter });
               }
               needsFrame = isRunning;
            }
@@ -1328,6 +1562,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       const VIEW_PROTEIN_COLORS = [new THREE.Color(0x93c5fd), new THREE.Color(0x6ee7b7), new THREE.Color(0xfbcfe8), new THREE.Color(0xfde68a), new THREE.Color(0xfca5a5)];
       const VIEW_DNA_COLORS = [new THREE.Color(0xc084fc), new THREE.Color(0x67e8f9), new THREE.Color(0x22d3ee)];
       const VIEW_GLYCAN_COLORS = [new THREE.Color(0xfba919), new THREE.Color(0xeab308), new THREE.Color(0xd97706)];
+      const VIEW_COFACTOR_COLORS = [new THREE.Color(0xff6b35), new THREE.Color(0xff3864), new THREE.Color(0xffaa00)];
       
       const CHAIN_PALETTES = {
           'default': [new THREE.Color(0x93c5fd), new THREE.Color(0x6ee7b7), new THREE.Color(0xfbcfe8), new THREE.Color(0xfde68a), new THREE.Color(0xc084fc), new THREE.Color(0xfca5a5), new THREE.Color(0x67e8f9), new THREE.Color(0xe5e7eb)],
@@ -1354,26 +1589,20 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
         'GLC': 162, 'SIA': 291, 'NDG': 203, 'FUL': 146,
         'UNK': 110
       };
-
       const GLYCAN_NAMES = new Set(['NAG', 'MAN', 'BMA', 'FUC', 'GAL', 'GLC', 'SIA', 'NDG', 'FUL']);
+
+      const COFACTOR_NAMES = new Set(['HEM', 'HEC', 'ATP', 'ADP', 'AMP', 'GTP', 'GDP', 'GMP', 'NAD', 'NAP', 'NDP', 'FAD', 'FMN', 'COA', 'ACO', 'PLP', 'SF4', 'FES', 'ZN', 'MG', 'CA', 'FE', 'MN', 'CU', 'CO', 'NI', 'CLR', 'PLM', 'OLA', 'RET']);
+      const COFACTOR_MASSES = {'HEM': 616, 'ATP': 507, 'ADP': 427, 'GTP': 523, 'NAD': 663, 'FAD': 785, 'FMN': 456, 'COA': 767, 'PLP': 247, 'SF4': 352, 'ZN': 65, 'MG': 24, 'CA': 40, 'FE': 56, 'default': 200};
+
+      const SS_COLORS = { 'H': [0.94, 0.27, 0.51], 'E': [0.24, 0.60, 0.95], 'C': [0.75, 0.75, 0.75] };
 
       // Residue property colors [r, g, b] normalized 0–1
       const RESIDUE_PROPERTIES = {
-          // Hydrophobic (orange)
-          ALA:[0.98,0.45,0.09], VAL:[0.98,0.45,0.09], ILE:[0.98,0.45,0.09],
-          LEU:[0.98,0.45,0.09], MET:[0.98,0.45,0.09], PHE:[0.98,0.45,0.09],
-          TRP:[0.98,0.45,0.09], PRO:[0.98,0.45,0.09],
-          // Polar uncharged (cyan)
-          SER:[0.13,0.83,0.94], THR:[0.13,0.83,0.94], CYS:[0.13,0.83,0.94],
-          TYR:[0.13,0.83,0.94], ASN:[0.13,0.83,0.94], GLN:[0.13,0.83,0.94],
-          // Positive (blue)
+          ALA:[0.98,0.45,0.09], VAL:[0.98,0.45,0.09], ILE:[0.98,0.45,0.09], LEU:[0.98,0.45,0.09], MET:[0.98,0.45,0.09], PHE:[0.98,0.45,0.09], TRP:[0.98,0.45,0.09], PRO:[0.98,0.45,0.09],
+          SER:[0.13,0.83,0.94], THR:[0.13,0.83,0.94], CYS:[0.13,0.83,0.94], TYR:[0.13,0.83,0.94], ASN:[0.13,0.83,0.94], GLN:[0.13,0.83,0.94],
           LYS:[0.23,0.51,0.96], ARG:[0.23,0.51,0.96], HIS:[0.43,0.55,0.96],
-          // Negative (red)
           ASP:[0.94,0.27,0.27], GLU:[0.94,0.27,0.27],
-          // Glycine/special (light gray)
-          GLY:[0.82,0.82,0.82],
-          // Default
-          UNK:[0.55,0.55,0.55]
+          GLY:[0.82,0.82,0.82], UNK:[0.55,0.55,0.55]
       };
 
       const PRESETS = {
@@ -1386,6 +1615,13 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
         'sketch': { theme: 'rough', zoom: 40, decay: 92.0, gamma: 0.6, intensity: 70, jitter: 0.8 },
         'cyber': { theme: 'cyber', zoom: 35, decay: 98.5, gamma: 0.7, intensity: 55, jitter: 0.5 }
       };
+
+      // ANIMATION TIMELINE
+      const ANIMATABLE_PARAMS = ['temp', 'k', 'speed', 'zoom', 'decay', 'gamma', 'softness', 'intensity', 'jitter', 'bloom', 'depthfog', 'rotX', 'rotY', 'rotZ', 'panX', 'panY'];
+      let keyframes = [];
+      let timelinePlaying = false;
+      let timelineStartTime = 0;
+      let timelineDuration = 10;
 
       let worker = null;
       let state = { isRunning: false, hasStructure: false, hasStarted: false, isLoading: false, workerRunning: false, isRecording: false };
@@ -1403,17 +1639,19 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       let displayMax = 0.5;
       const MAX_HISTORY = 40;
       let historyStack = [];
-      let latestBuffer = null; 
+      let latestBuffer = null;
+      let latestDepthBuffer = null; 
       let frameCounter = 0;
       let grainMap = null;
       let bloomCanvas = null;
       let bloomCtx = null;
       let currentPdbId = "1CDW";
-      window.chainColors = {}; // chain letter → hex string e.g. '#93c5fd'
+      window.chainColors = {};
 
-      let autoSpinSpeed = 0;     // degrees/second, 0 = off
+      let autoSpinSpeed = 0;     
       let autoSpinAngle = 0;
       let autoSpinLastTime = 0;
+      let touchState = { active: false, lastDist: 0, lastMidX: 0, lastMidY: 0 };
 
       let recordingMode = 'free'; 
       const BOOMERANG_FRAMES = 75; 
@@ -1434,6 +1672,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           intensity: document.getElementById('art-intensity'), intensityVal: document.getElementById('intensity-val'), jitter: document.getElementById('art-jitter'),
           jitterVal: document.getElementById('jitter-val'),
           bloom: document.getElementById('art-bloom'),
+          depthfog: document.getElementById('art-depthfog'), depthfogVal: document.getElementById('depthfog-val'),
           bloomVal: document.getElementById('bloom-val'),
           theme: document.getElementById('art-theme'),
           preset: document.getElementById('style-preset'),
@@ -1446,26 +1685,74 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           autoHistoryToggle: document.getElementById('auto-history-toggle'), autoHistoryInterval: document.getElementById('auto-history-interval'),
           error: document.getElementById('fetch-error'),
           simTimer: document.getElementById('sim-timer'),
+          accumCounter: document.getElementById('accum-counter'),
           recordBtn: document.getElementById('btn-record'),
           recMenu: document.getElementById('rec-menu'),
           recProgress: document.getElementById('rec-progress'),
           viewColorMode: document.getElementById('view-color-mode'),
-          // Camera Controls
-          rotX: document.getElementById('cam-rot-x'),
-          rotY: document.getElementById('cam-rot-y'),
-          rotZ: document.getElementById('cam-rot-z'),
-          panX: document.getElementById('cam-pan-x'),
-          panY: document.getElementById('cam-pan-y'),
-          spinToggle: document.getElementById('spin-toggle'),
-          spinSpeed:  document.getElementById('spin-speed'),
-          spinVal:    document.getElementById('spin-val'),
+          rotX: document.getElementById('cam-rot-x'), rotY: document.getElementById('cam-rot-y'), rotZ: document.getElementById('cam-rot-z'),
+          panX: document.getElementById('cam-pan-x'), panY: document.getElementById('cam-pan-y'),
+          spinToggle: document.getElementById('spin-toggle'), spinSpeed: document.getElementById('spin-speed'), spinVal: document.getElementById('spin-val'),
+          dofFocus: document.getElementById('art-dof-focus'), dofStrength: document.getElementById('art-dof-strength')
       };
 
-      // UNION FIND HELPER FOR CLUSTERING
       class UnionFind {
           constructor(n) { this.parent = Array.from({length:n}, (_,i)=>i); }
           find(i) { if(this.parent[i]===i) return i; return this.parent[i]=this.find(this.parent[i]); }
           union(i,j) { const rootI=this.find(i), rootJ=this.find(j); if(rootI!==rootJ){ this.parent[rootI]=rootJ; return true;} return false; }
+      }
+
+      function encodeStateToURL() {
+          const params = new URLSearchParams();
+          params.set('pdb', document.getElementById('pdb-id').value);
+          params.set('theme', ui.theme.value);
+          params.set('temp', ui.temp.value);
+          params.set('k', ui.k.value);
+          params.set('speed', ui.speed.value);
+          params.set('zoom', ui.zoom.value);
+          params.set('decay', ui.decay.value);
+          params.set('gamma', ui.gamma.value);
+          params.set('softness', ui.softness.value);
+          params.set('intensity', ui.intensity.value);
+          params.set('jitter', ui.jitter.value);
+          params.set('bloom', ui.bloom ? ui.bloom.value : '0.15');
+          params.set('depthfog', ui.depthfog ? ui.depthfog.value : '0.3');
+          params.set('source', ui.source.value);
+          params.set('cmode', document.getElementById('art-color-mode')?.value || 'density');
+          params.set('rx', ui.rotX.value); params.set('ry', ui.rotY.value); params.set('rz', ui.rotZ.value);
+          params.set('px', ui.panX.value); params.set('py', ui.panY.value);
+          return window.location.origin + window.location.pathname + '?' + params.toString();
+      }
+
+      window.copyShareURL = () => {
+          const url = encodeStateToURL();
+          navigator.clipboard.writeText(url).then(() => {
+              const btn = document.getElementById('btn-share');
+              const orig = btn.innerText; btn.innerText = "Copied!"; setTimeout(() => btn.innerText = orig, 1500);
+          }).catch(() => alert("Could not copy URL"));
+      };
+
+      function loadURLParams() {
+          const p = new URLSearchParams(window.location.search);
+          if (p.has('pdb') || p.has('af')) document.getElementById('pdb-id').value = (p.get('pdb') || p.get('af')).toUpperCase();
+          if (p.has('theme')) ui.theme.value = p.get('theme');
+          if (p.has('temp'))  { ui.temp.value = p.get('temp'); ui.tempVal.textContent = parseFloat(p.get('temp')).toFixed(2); }
+          if (p.has('k'))     { ui.k.value = p.get('k'); ui.kVal.textContent = parseFloat(p.get('k')).toFixed(1); }
+          if (p.has('speed')) { ui.speed.value = p.get('speed'); ui.speedVal.textContent = parseFloat(p.get('speed')).toFixed(2)+'x'; }
+          if (p.has('zoom'))  { ui.zoom.value = p.get('zoom'); ui.zoomVal.textContent = p.get('zoom'); }
+          if (p.has('decay')) { ui.decay.value = p.get('decay'); ui.decayVal.textContent = p.get('decay')+'%'; }
+          if (p.has('gamma')) { ui.gamma.value = p.get('gamma'); ui.gammaVal.textContent = p.get('gamma'); }
+          if (p.has('softness')){ ui.softness.value = p.get('softness'); ui.softnessVal.textContent = p.get('softness'); }
+          if (p.has('intensity')){ ui.intensity.value = p.get('intensity'); ui.intensityVal.textContent = p.get('intensity'); }
+          if (p.has('jitter')){ ui.jitter.value = p.get('jitter'); ui.jitterVal.textContent = p.get('jitter'); }
+          if (p.has('bloom')) { ui.bloom.value = p.get('bloom'); ui.bloomVal.textContent = p.get('bloom'); }
+          if (p.has('depthfog')){ ui.depthfog.value = p.get('depthfog'); ui.depthfogVal.textContent = p.get('depthfog'); }
+          if (p.has('cmode')) { const el = document.getElementById('art-color-mode'); if(el) el.value = p.get('cmode'); }
+          if (p.has('rx')) ui.rotX.value = p.get('rx');
+          if (p.has('ry')) ui.rotY.value = p.get('ry');
+          if (p.has('rz')) ui.rotZ.value = p.get('rz');
+          if (p.has('px')) ui.panX.value = p.get('px');
+          if (p.has('py')) ui.panY.value = p.get('py');
       }
 
       function init() {
@@ -1474,133 +1761,385 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           bindUI();
           updateStatusUI();
           const blob = new Blob([workerCode], {type: 'application/javascript'});
-          worker = new Worker(URL.createObjectURL(blob));
+          const blobUrl = URL.createObjectURL(blob);
+          worker = new Worker(blobUrl);
+          URL.revokeObjectURL(blobUrl);
           worker.onmessage = handleWorkerMessage;
+          loadURLParams();
           requestAnimationFrame(tick);
-          setTimeout(window.fetchPDB, 100);
+          const p = new URLSearchParams(window.location.search);
+          if (p.has('pdb') || p.has('af')) setTimeout(window.fetchPDB, 100);
+      }
+
+      function paramToElementId(param) {
+          const map = { temp: 'temp-slider', k: 'k-restraint', speed: 'sim-speed', zoom: 'art-zoom-control', decay: 'art-decay', gamma: 'art-gamma', softness: 'art-softness', intensity: 'art-intensity', jitter: 'art-jitter', bloom: 'art-bloom', depthfog: 'art-depthfog', rotX: 'cam-rot-x', rotY: 'cam-rot-y', rotZ: 'cam-rot-z', panX: 'cam-pan-x', panY: 'cam-pan-y' };
+          return map[param] || param;
+      }
+
+      window.addKeyframe = () => {
+          const time = keyframes.length === 0 ? 0 : parseFloat(prompt('Time (seconds):', timelineDuration.toFixed(1)));
+          if (isNaN(time)) return;
+          const params = {};
+          ANIMATABLE_PARAMS.forEach(p => { const el = document.getElementById(paramToElementId(p)); if (el) params[p] = parseFloat(el.value); });
+          keyframes.push({ time, params });
+          keyframes.sort((a, b) => a.time - b.time);
+          renderKeyframeList();
+      };
+      
+      window.clearTimeline = () => { keyframes = []; renderKeyframeList(); timelinePlaying = false; document.getElementById('tl-scrubber').value = 0; };
+      
+      function renderKeyframeList() {
+          const list = document.getElementById('keyframe-list');
+          list.innerHTML = keyframes.map((k, i) => `<div class="p-1 bg-white/5 rounded border border-white/10 flex justify-between"><span>KF ${i+1}</span><span>${k.time.toFixed(1)}s</span></div>`).join('');
+      }
+
+      window.playTimeline = () => {
+          if (keyframes.length < 2) { alert('Need at least 2 keyframes'); return; }
+          timelinePlaying = true; timelineStartTime = performance.now();
+          if (!state.isRunning) window.toggleSim(true);
+      };
+
+      window.scrubTimeline = (pct) => {
+          if(keyframes.length < 2) return;
+          const t = pct / 100;
+          applyTimelineState(t * timelineDuration);
+      };
+
+      function applyTimelineState(currentTime) {
+          let kf0 = keyframes[0], kf1 = keyframes[keyframes.length - 1];
+          for (let i = 0; i < keyframes.length - 1; i++) {
+              if (keyframes[i].time <= currentTime && keyframes[i+1].time >= currentTime) { kf0 = keyframes[i]; kf1 = keyframes[i+1]; break; }
+          }
+          const range = (kf1.time - kf0.time) || 1;
+          const alpha = (currentTime - kf0.time) / range;
+          const smooth = alpha * alpha * (3 - 2 * alpha);
+          ANIMATABLE_PARAMS.forEach(p => {
+              if (kf0.params[p] !== undefined && kf1.params[p] !== undefined) {
+                  const val = kf0.params[p] + (kf1.params[p] - kf0.params[p]) * smooth;
+                  const el = document.getElementById(paramToElementId(p));
+                  if (el) { el.value = val; el.dispatchEvent(new Event('input')); }
+              }
+          });
       }
 
       function tick(now) {
           requestAnimationFrame(tick);
-          
           if (!lastFrameTime) lastFrameTime = now;
-          const dt = now - lastFrameTime;
-          lastFrameTime = now;
+          const dt = now - lastFrameTime; lastFrameTime = now;
+
+          if (timelinePlaying && keyframes.length >= 2) {
+              const elapsed = (now - timelineStartTime) / 1000;
+              const t = elapsed / timelineDuration;
+              if (t >= 1.0) { timelinePlaying = false; document.getElementById('tl-scrubber').value = 100; applyTimelineState(timelineDuration); }
+              else { document.getElementById('tl-scrubber').value = t * 100; applyTimelineState(t * timelineDuration); }
+          }
           
           if (state.isRecording && recordingMode === 'boomerang' && boomerangPhase === 'reverse') {
               if (now - lastReplayTime > 33) {
                   lastReplayTime = now;
                   const frame = capturedFrames.pop();
                   const remainingRatio = capturedFrames.length / BOOMERANG_FRAMES; 
-                  const totalProgress = 0.5 + (1.0 - remainingRatio) * 0.5;
-                  ui.recProgress.style.width = (totalProgress * 100) + '%';
+                  ui.recProgress.style.width = ((0.5 + (1.0 - remainingRatio) * 0.5) * 100) + '%';
                   if(frame) {
                       artCtx.putImageData(frame, 0, 0);
-                      const theme = ui.theme.value;
-                      const bg = getThemeBackground(theme);
+                      const theme = ui.theme.value; const bg = getThemeBackground(theme);
                       drawWatermarks(artCtx, artWidth, artHeight, theme, bg);
-                  } else {
-                      if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
-                  }
+                  } else { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }
               }
-              controls.update();
-              return; 
+              controls.update(); return; 
           }
-
           if (state.isRecording && recordingMode === 'boomerang' && boomerangPhase === 'forward') {
-               const ratio = capturedFrames.length / BOOMERANG_FRAMES;
-               ui.recProgress.style.width = (ratio * 50) + '%';
-               if (capturedFrames.length >= BOOMERANG_FRAMES) {
-                   boomerangPhase = 'reverse';
-                   lastReplayTime = now; 
-                   return; 
-               }
+               ui.recProgress.style.width = ((capturedFrames.length / BOOMERANG_FRAMES) * 50) + '%';
+               if (capturedFrames.length >= BOOMERANG_FRAMES) { boomerangPhase = 'reverse'; lastReplayTime = now; return; }
           }
-
-          // Auto-spin: slowly rotate Y axis, accumulating trails
           if (autoSpinSpeed !== 0 && state.hasStructure) {
               if (autoSpinLastTime === 0) autoSpinLastTime = now;
-              const spinDt = Math.min(now - autoSpinLastTime, 100); // cap at 100ms
-              autoSpinLastTime = now;
-              autoSpinAngle = (autoSpinAngle + autoSpinSpeed * spinDt / 1000 + 360) % 360;
-              ui.rotY.value = autoSpinAngle.toFixed(1);
-              window.updateWorkerParams();
-          } else {
-              autoSpinLastTime = 0;
-          }
+              const spinDt = Math.min(now - autoSpinLastTime, 100);
+              autoSpinLastTime = now; autoSpinAngle = (autoSpinAngle + autoSpinSpeed * spinDt / 1000 + 360) % 360;
+              ui.rotY.value = autoSpinAngle.toFixed(1); window.updateWorkerParams();
+          } else { autoSpinLastTime = 0; }
 
           if (worker && state.hasStructure && !workerTickInFlight) {
               workerTickInFlight = true;
               worker.postMessage({type: 'tick', dt: dt});
           }
-          
           controls.update();
           if (composer) composer.render(); else renderer.render(scene, camera);
       }
 
-      // --------------------------------------------------------------------------------
-      // REFACTORED PARSE & LOAD: MST TOPOLOGY + STRICT CHEMICAL ANCHORING
-      // --------------------------------------------------------------------------------
+      function parseCIFLoops(txt) {
+        const loops = new Map(); const lines = txt.split('\n'); let i = 0;
+        while (i < lines.length) {
+          const line = lines[i].trim();
+          if (line === 'loop_') {
+            i++; const cols = [];
+            while (i < lines.length && lines[i].trim().startsWith('_')) { cols.push(lines[i].trim()); i++; }
+            if (cols.length === 0) continue;
+            const cat = cols[0].split('.')[0];
+            const shortCols = cols.map(c => c.split('.').slice(1).join('.'));
+            const rows = [];
+            while (i < lines.length) {
+              const rl = lines[i].trim();
+              if (rl === '' || rl.startsWith('loop_') || rl.startsWith('#') || (rl.startsWith('_') && rl.includes('.')) || rl.startsWith('data_')) break;
+              const tokens = []; let pos = 0; const s = rl;
+              while (pos < s.length) {
+                if (s[pos] === ' ' || s[pos] === '\t') { pos++; continue; }
+                if (s[pos] === "'" || s[pos] === '"') {
+                  const q = s[pos]; let end = s.indexOf(q, pos+1); if (end === -1) end = s.length;
+                  tokens.push(s.substring(pos+1, end)); pos = end+1;
+                } else if (s[pos] === ';' && pos === 0) {
+                  let val = ''; i++;
+                  while (i < lines.length && !(lines[i].trim() === ';')) { val += lines[i]+'\n'; i++; }
+                  tokens.push(val.trim()); pos = s.length;
+                } else {
+                  let end = pos; while (end < s.length && s[end] !== ' ' && s[end] !== '\t') end++;
+                  tokens.push(s.substring(pos, end)); pos = end;
+                }
+              }
+              if (tokens.length === 0) { i++; continue; }
+              while (tokens.length < cols.length && i+1 < lines.length) {
+                i++; const nl = lines[i].trim();
+                if (nl === '' || nl.startsWith('loop_') || nl.startsWith('#') || nl.startsWith('_')) break;
+                let np = 0;
+                while (np < nl.length) {
+                  if (nl[np] === ' ' || nl[np] === '\t') { np++; continue; }
+                  if (nl[np] === "'" || nl[np] === '"') {
+                    const q = nl[np]; let end = nl.indexOf(q, np+1); if (end === -1) end = nl.length;
+                    tokens.push(nl.substring(np+1, end)); np = end+1;
+                  } else { let end = np; while (end < nl.length && nl[end] !== ' ' && nl[end] !== '\t') end++; tokens.push(nl.substring(np, end)); np = end; }
+                }
+              }
+              if (tokens.length >= cols.length) { const row = {}; for (let c = 0; c < cols.length; c++) row[shortCols[c]] = tokens[c]; rows.push(row); }
+              i++;
+            }
+            loops.set(cat, { cols: shortCols, rows });
+          } else { i++; }
+        }
+        return loops;
+      }
+
+      function parseCIF(txt) {
+        const loops = parseCIFLoops(txt);
+        const nucleic = new Set(['DA','DT','DG','DC','A','T','G','C','U']);
+        const modelGlycans = document.getElementById('model-glycans').checked;
+        const modelCofactors = document.getElementById('model-cofactors').checked;
+        const atomSite = loops.get('_atom_site');
+        const biomt = [];
+        
+        const operList = loops.get('_pdbx_struct_oper_list');
+        if (operList) {
+            for (const row of operList.rows) {
+                if(!row['matrix[1][1]']) continue;
+                const m = new Float64Array(12);
+                m[0] = parseFloat(row['matrix[1][1]']); m[1] = parseFloat(row['matrix[1][2]']); m[2] = parseFloat(row['matrix[1][3]']); m[3] = parseFloat(row['vector[1]']);
+                m[4] = parseFloat(row['matrix[2][1]']); m[5] = parseFloat(row['matrix[2][2]']); m[6] = parseFloat(row['matrix[2][3]']); m[7] = parseFloat(row['vector[2]']);
+                m[8] = parseFloat(row['matrix[3][1]']); m[9] = parseFloat(row['matrix[3][2]']); m[10]= parseFloat(row['matrix[3][3]']); m[11]= parseFloat(row['vector[3]']);
+                biomt.push({ m, id: row['id'] });
+            }
+        }
+
+        let firstModel = null, modelCount = 0;
+        let allModels = [];
+
+        if (!atomSite || atomSite.rows.length === 0) return { atoms: [], links: [], biomt, allModels };
+        const cols = atomSite.cols, rows = atomSite.rows;
+        const hasCol = (n) => cols.includes(n);
+        const atomNameCol = hasCol('auth_atom_id') ? 'auth_atom_id' : 'label_atom_id';
+        const compIdCol = hasCol('auth_comp_id') ? 'auth_comp_id' : 'label_comp_id';
+        const chainCol = hasCol('auth_asym_id') ? 'auth_asym_id' : 'label_asym_id';
+        const seqIdCol = hasCol('auth_seq_id') ? 'auth_seq_id' : 'label_seq_id';
+        const modelCol = hasCol('pdbx_PDB_model_num') ? 'pdbx_PDB_model_num' : null;
+        const altIdCol = hasCol('label_alt_id') ? 'label_alt_id' : null;
+        
+        const cofactorSeen = new Set();
+        
+        for (const row of rows) {
+          const m = modelCol ? row[modelCol] : '1';
+          if (m && m !== '.' && m !== '?') {
+              if (firstModel === null) firstModel = m;
+              const midx = parseInt(m);
+              if (midx > modelCount) modelCount = midx;
+          }
+          
+          if (altIdCol) { const alt = row[altIdCol]; if (alt && alt !== '.' && alt !== '?' && alt !== 'A') continue; }
+          const atomName = (row[atomNameCol] || '').replace(/"/g, '').trim();
+          const resName = (row[compIdCol] || '').replace(/"/g, '').trim().toUpperCase();
+          const chain = (row[chainCol] || '').replace(/"/g, '').trim();
+          const resNum = (row[seqIdCol] || '').replace(/"/g, '').trim();
+          const x = parseFloat(row['Cartn_x']), y = parseFloat(row['Cartn_y']), z = parseFloat(row['Cartn_z']);
+          if (isNaN(x) || isNaN(y) || isNaN(z)) continue;
+          
+          const bfactor = parseFloat(row['B_iso_or_equiv'] || '0');
+
+          const midx = parseInt(m) || 1;
+          if (!allModels[midx]) allModels[midx] = [];
+
+          const isNuc = nucleic.has(resName), isGly = GLYCAN_NAMES.has(resName), isCof = COFACTOR_NAMES.has(resName);
+          if (isGly && !modelGlycans) continue;
+          if (isCof && !modelCofactors) continue;
+
+          let shouldExtract = false;
+          let simMass = 1.0, visualW = 1.0;
+          if ((atomName === 'CA' && !isNuc && !isGly && !isCof) || (atomName === 'P' && isNuc) || (atomName === 'C1' && isGly)) {
+              shouldExtract = true;
+              let mass = RESIDUE_MASSES[resName] || 110.0; simMass = mass / 110.0;
+              visualW = isGly ? 0.6 : Math.min(1.0, (0.2 + (mass / 330.0) * 0.8));
+          } else if (isCof) {
+              const cofKey = `${midx}_${chain}_${resNum}_${resName}`;
+              if (!cofactorSeen.has(cofKey)) {
+                  cofactorSeen.add(cofKey); shouldExtract = true;
+                  let mass = COFACTOR_MASSES[resName] || COFACTOR_MASSES['default']; simMass = mass / 110.0;
+                  visualW = Math.min(1.0, 0.4 + (mass / 800) * 0.6);
+              }
+          }
+
+          if (shouldExtract) {
+              const sigma = 0.6 + 0.4 * Math.cbrt((simMass*110.0) / 186.0);
+              allModels[midx].push({ x: x/4, y: y/4, z: z/4, isNucleic: isNuc, isGlycan: isGly, isProtein: !isNuc && !isGly && !isCof, isCofactor: isCof, resName, simMass, visualWeight: visualW, chain, resNum, bfactor, sigma, ss: 'C' });
+          }
+        }
+        
+        const linkRecords = [];
+        const structConn = loops.get('_struct_conn');
+        if (structConn) {
+          const sc = structConn.cols, scHas = (n) => sc.includes(n);
+          const typeCol = scHas('conn_type_id') ? 'conn_type_id' : null;
+          const p1Chain = scHas('ptnr1_auth_asym_id') ? 'ptnr1_auth_asym_id' : (scHas('ptnr1_label_asym_id') ? 'ptnr1_label_asym_id' : null);
+          const p1Seq = scHas('ptnr1_auth_seq_id') ? 'ptnr1_auth_seq_id' : (scHas('ptnr1_label_seq_id') ? 'ptnr1_label_seq_id' : null);
+          const p2Chain = scHas('ptnr2_auth_asym_id') ? 'ptnr2_auth_asym_id' : (scHas('ptnr2_label_asym_id') ? 'ptnr2_label_asym_id' : null);
+          const p2Seq = scHas('ptnr2_auth_seq_id') ? 'ptnr2_auth_seq_id' : (scHas('ptnr2_label_seq_id') ? 'ptnr2_label_seq_id' : null);
+          if (p1Chain && p1Seq && p2Chain && p2Seq) {
+            for (const row of structConn.rows) {
+              const t = typeCol ? (row[typeCol] || '').toLowerCase() : '';
+              if (t === 'covale' || t === 'disulf' || t === 'metalc') {
+                 linkRecords.push({ c1: (row[p1Chain]||'').replace(/"/g,'').trim(), r1: (row[p1Seq]||'').replace(/"/g,'').trim(), c2: (row[p2Chain]||'').replace(/"/g,'').trim(), r2: (row[p2Seq]||'').replace(/"/g,'').trim(), type: t });
+              }
+            }
+          }
+        }
+        return { atoms: allModels[firstModel] || [], links: linkRecords, biomt, allModels: allModels.filter(m=>m) };
+      }
+
+      function isCIFFormat(txt) {
+        const start = txt.substring(0, 2000).trim();
+        return start.startsWith('data_') || (start.includes('loop_') && start.includes('_atom_site'));
+      }
+
+
       window.parseAndLoad = function(txt) {
           ui.loader.style.display = 'flex'; state.isLoading = true; updateStatusUI();
           setTimeout(() => {
               try {
-                  const lines = txt.split('\n');
-                  const nucleic = new Set(['DA','DT','DG','DC','A','T','G','C','U']);
-                  const modelGlycans = document.getElementById('model-glycans').checked;
-
                   let newAtoms = [];
-                  let linkRecords = []; 
-                  let hasModel = false; let inModel = false;
+                  let linkRecords = [];
+                  let biomt = [];
+                  let allModels = [];
+                  const ssMap = new Map();
 
-                  // 1. Parse Atoms and LINKs
-                  for (let l of lines) {
-                      if (l.startsWith('LINK')) {
-                          linkRecords.push({
-                              c1: l[21], r1: l.substring(22, 26).trim(),
-                              c2: l[51], r2: l.substring(52, 56).trim()
-                          });
-                          continue;
-                      }
-
-                      if (l.startsWith('MODEL')) { if (!hasModel) { hasModel = true; inModel = true; continue; } else break; }
-                      if (l.startsWith('ENDMDL')) { if (hasModel) break; continue; }
-                      if (hasModel && !inModel) continue;
+                  if (isCIFFormat(txt)) {
+                      const cifResult = parseCIF(txt);
+                      newAtoms = cifResult.atoms;
+                      linkRecords = cifResult.links;
+                      biomt = cifResult.biomt;
+                      allModels = cifResult.allModels;
+                  } else {
+                      const lines = txt.split('\n');
+                      const nucleic = new Set(['DA','DT','DG','DC','A','T','G','C','U']);
+                      const modelGlycans = document.getElementById('model-glycans').checked;
+                      const modelCofactors = document.getElementById('model-cofactors').checked;
                       
-                      if (l.startsWith('ATOM') || l.startsWith('HETATM')) {
-                          const name = l.substring(12,16).trim();
-                          const res = l.substring(17,20).trim();
-                          const isNuc = nucleic.has(res);
-                          const isGly = GLYCAN_NAMES.has(res);
-                          
-                          if (isGly && !modelGlycans) continue;
+                      let currentModel = 1; let inModel = false;
+                      const cofactorSeen = new Set();
+                      let currentOper = null;
 
-                          // Keep CA (Protein), P (DNA), C1 (Glycan)
-                          if ((name === 'CA' && !isNuc && !isGly) || (name === 'P' && isNuc) || (name === 'C1' && isGly)) {
-                              const x = parseFloat(l.substring(30,38));
-                              const y = parseFloat(l.substring(38,46));
-                              const z = parseFloat(l.substring(46,54));
-                              const chain = l[21]; 
-                              const resNum = l.substring(22, 26).trim();
-                              const resName = res.trim().toUpperCase();
-                              let mass = RESIDUE_MASSES[resName] || 110.0;
-                              const simMass = mass / 110.0;
-                              let visualW = isGly ? 0.6 : (0.2 + (mass / 330.0) * 0.8);
-                              if (visualW > 1.0) visualW = 1.0;
+                      for (let l of lines) {
+                          if (l.startsWith('REMARK 350') && l.includes('BIOMT')) {
+                              const row = parseInt(l.substring(18, 19));
+                              const m1 = parseFloat(l.substring(23, 33)), m2 = parseFloat(l.substring(33, 43)), m3 = parseFloat(l.substring(43, 53)), t = parseFloat(l.substring(53, 68));
+                              if (row === 1) { currentOper = { m: new Float64Array(12) }; biomt.push(currentOper); }
+                              if (currentOper) { const base = (row - 1) * 4; currentOper.m[base] = m1; currentOper.m[base+1] = m2; currentOper.m[base+2] = m3; currentOper.m[base+3] = t; }
+                          }
+                          if (l.startsWith('HELIX')) {
+                              const chain = l[19], startRes = parseInt(l.substring(21, 25)), endRes = parseInt(l.substring(33, 37));
+                              for (let r = startRes; r <= endRes; r++) ssMap.set(chain + '_' + r, 'H');
+                          }
+                          if (l.startsWith('SHEET')) {
+                              const chain = l[21], startRes = parseInt(l.substring(22, 26)), endRes = parseInt(l.substring(33, 37));
+                              for (let r = startRes; r <= endRes; r++) ssMap.set(chain + '_' + r, 'E');
+                          }
+                          if (l.startsWith('LINK')) { linkRecords.push({ c1: l[21], r1: l.substring(22, 26).trim(), c2: l[51], r2: l.substring(52, 56).trim(), type: 'covale' }); continue; }
+                          if (l.startsWith('SSBOND')) { linkRecords.push({ c1: l[15], r1: l.substring(17, 21).trim(), c2: l[29], r2: l.substring(31, 35).trim(), type: 'ssbond' }); continue; }
+                          if (l.startsWith('MODEL')) { currentModel = parseInt(l.substring(6).trim()) || (allModels.length + 1); if (!allModels[currentModel]) allModels[currentModel] = []; inModel = true; continue; }
+                          if (l.startsWith('ENDMDL')) { inModel = false; continue; }
+                          if (l.startsWith('ATOM') || l.startsWith('HETATM')) {
+                              if (!allModels[currentModel]) allModels[currentModel] = [];
+                              const name = l.substring(12,16).trim(); const res = l.substring(17,20).trim();
+                              const isNuc = nucleic.has(res); const isGly = GLYCAN_NAMES.has(res); const isCof = COFACTOR_NAMES.has(res);
+                              if (isGly && !modelGlycans) continue;
+                              if (isCof && !modelCofactors) continue;
+                              
+                              let shouldExtract = false;
+                              let simMass = 1.0, visualW = 1.0;
+                              const chain = l[21], resNum = l.substring(22, 26).trim(), resName = res.trim().toUpperCase();
 
-                              if (!isNaN(x)) {
-                                  newAtoms.push({ 
-                                    x: x/4, y: y/4, z: z/4, 
-                                    isNucleic: isNuc, isGlycan: isGly,
-                                    resName: resName, isProtein: !isNuc && !isGly, 
-                                    simMass: simMass, visualWeight: visualW, 
-                                    chain: chain, resNum: resNum 
-                                  });
+                              if ((name === 'CA' && !isNuc && !isGly && !isCof) || (name === 'P' && isNuc) || (name === 'C1' && isGly)) {
+                                  shouldExtract = true;
+                                  let mass = RESIDUE_MASSES[resName] || 110.0; simMass = mass / 110.0;
+                                  visualW = isGly ? 0.6 : Math.min(1.0, (0.2 + (mass / 330.0) * 0.8));
+                              } else if (isCof) {
+                                  const cofKey = `${currentModel}_${chain}_${resNum}_${resName}`;
+                                  if (!cofactorSeen.has(cofKey)) { cofactorSeen.add(cofKey); shouldExtract = true; let mass = COFACTOR_MASSES[resName] || COFACTOR_MASSES['default']; simMass = mass / 110.0; visualW = Math.min(1.0, 0.4 + (mass / 800) * 0.6); }
+                              }
+                              
+                              if (shouldExtract) {
+                                  const x = parseFloat(l.substring(30,38)), y = parseFloat(l.substring(38,46)), z = parseFloat(l.substring(46,54));
+                                  const bfactor = parseFloat(l.substring(60, 66)) || 0;
+                                  const sigma = 0.6 + 0.4 * Math.cbrt((simMass*110.0) / 186.0);
+                                  if (!isNaN(x)) { allModels[currentModel].push({ x: x/4, y: y/4, z: z/4, isNucleic: isNuc, isGlycan: isGly, isCofactor: isCof, resName, isProtein: !isNuc && !isGly && !isCof, simMass, visualWeight: visualW, chain, resNum, bfactor, sigma, ss: ssMap.get(chain+'_'+resNum) || 'C' }); }
                               }
                           }
                       }
+                      allModels = allModels.filter(m=>m);
+                      newAtoms = allModels[0] || [];
                   }
+                  
                   if (newAtoms.length < 2) { alert("No atoms found."); return; }
+
+                  // Secondary Structure fallback via angles
+                  if (ssMap.size === 0 && newAtoms.length > 2) {
+                      for (let i = 1; i < newAtoms.length - 1; i++) {
+                          if (newAtoms[i].isGlycan || newAtoms[i].isNucleic || newAtoms[i].isCofactor) continue;
+                          if (newAtoms[i-1].chain !== newAtoms[i].chain || newAtoms[i].chain !== newAtoms[i+1].chain) continue;
+                          const v1x = newAtoms[i-1].x - newAtoms[i].x, v1y = newAtoms[i-1].y - newAtoms[i].y, v1z = newAtoms[i-1].z - newAtoms[i].z;
+                          const v2x = newAtoms[i+1].x - newAtoms[i].x, v2y = newAtoms[i+1].y - newAtoms[i].y, v2z = newAtoms[i+1].z - newAtoms[i].z;
+                          const dot = v1x*v2x + v1y*v2y + v1z*v2z;
+                          const m1 = Math.hypot(v1x, v1y, v1z) || 1e-6, m2 = Math.hypot(v2x, v2y, v2z) || 1e-6;
+                          const angle = Math.acos(Math.max(-1, Math.min(1, dot / (m1*m2)))) * 180 / Math.PI;
+                          if (angle < 105) newAtoms[i].ss = 'H'; else if (angle < 140) newAtoms[i].ss = 'E';
+                      }
+                  }
+
+                  // pLDDT detection
+                  const bfacs = newAtoms.map(a => a.bfactor).filter(b => b > 0);
+                  const isAlphaFold = bfacs.length > 0 && bfacs.every(b => b >= 0 && b <= 100) && (bfacs.reduce((a, b) => a + b, 0) / bfacs.length) > 40;
+                  newAtoms.forEach(a => a.isAlphaFold = isAlphaFold);
+
+                  // Biological Assembly Expansion
+                  if (document.getElementById('model-assembly').checked && biomt.length > 1) {
+                      const originalAtoms = [...newAtoms];
+                      const totalEstimated = originalAtoms.length * biomt.length;
+                      if (totalEstimated < 25000 || confirm(`Biological assembly has ${totalEstimated} residues. This may be slow. Continue?`)) {
+                          for (let op = 1; op < biomt.length; op++) {
+                              const m = biomt[op].m;
+                              for (const a of originalAtoms) {
+                                  const nx = m[0]*a.x*4 + m[1]*a.y*4 + m[2]*a.z*4 + m[3];
+                                  const ny = m[4]*a.x*4 + m[5]*a.y*4 + m[6]*a.z*4 + m[7];
+                                  const nz = m[8]*a.x*4 + m[9]*a.y*4 + m[10]*a.z*4 + m[11];
+                                  newAtoms.push({ ...a, x: nx/4, y: ny/4, z: nz/4, chain: a.chain + '_' + op });
+                              }
+                          }
+                      } else { document.getElementById('model-assembly').checked = false; }
+                  }
                   
                   // Center & Scale
                   let cx=0, cy=0, cz=0; for (let a of newAtoms) { cx+=a.x; cy+=a.y; cz+=a.z; }
@@ -1612,144 +2151,109 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   const atomMap = new Map();
                   newAtoms.forEach((a, i) => atomMap.set(`${a.chain}_${a.resNum}`, i));
                   const newBonds = [];
-                  const glycanIndices = [];
-                  const proteinIndices = [];
+                  const angleList = [];
+                  const glycanIndices = [], proteinIndices = [], cofactorIndices = [];
 
                   newAtoms.forEach((a, i) => {
                       if (a.isGlycan) glycanIndices.push(i);
                       if (a.isProtein) proteinIndices.push(i);
+                      if (a.isCofactor) cofactorIndices.push(i);
                   });
 
-                  // Initialize UnionFind to track connectivity
                   const uf = new UnionFind(newAtoms.length);
 
-                  // 2. Backbone Bonds (Linear)
+                  // 2. Backbone Bonds (Linear) & Angles
                   for (let i=0; i<newAtoms.length-1; i++) {
-                      if (newAtoms[i].isGlycan || newAtoms[i+1].isGlycan) continue;
+                      if (newAtoms[i].isGlycan || newAtoms[i+1].isGlycan || newAtoms[i].isCofactor || newAtoms[i+1].isCofactor) continue;
                       if (newAtoms[i].chain !== newAtoms[i+1].chain) continue;
                       const dist = Math.hypot(newAtoms[i].x-newAtoms[i+1].x, newAtoms[i].y-newAtoms[i+1].y, newAtoms[i].z-newAtoms[i+1].z);
                       if (dist < 3.0) { 
                           newBonds.push({i, j:i+1, visualWeight: (newAtoms[i].visualWeight + newAtoms[i+1].visualWeight)/2});
                           uf.union(i, i+1);
+                          
+                          if (i < newAtoms.length - 2 && newAtoms[i+1].chain === newAtoms[i+2].chain && !newAtoms[i+2].isCofactor && !newAtoms[i+2].isGlycan) {
+                              const v1x = newAtoms[i].x - newAtoms[i+1].x, v1y = newAtoms[i].y - newAtoms[i+1].y, v1z = newAtoms[i].z - newAtoms[i+1].z;
+                              const v2x = newAtoms[i+2].x - newAtoms[i+1].x, v2y = newAtoms[i+2].y - newAtoms[i+1].y, v2z = newAtoms[i+2].z - newAtoms[i+1].z;
+                              const dot = v1x*v2x + v1y*v2y + v1z*v2z;
+                              const m1 = Math.hypot(v1x, v1y, v1z) || 1e-6, m2 = Math.hypot(v2x, v2y, v2z) || 1e-6;
+                              const cosTheta = Math.max(-1, Math.min(1, dot / (m1 * m2)));
+                              angleList.push({ i, j: i+1, k: i+2, theta0: Math.acos(cosTheta) });
+                          }
                       }
                   }
 
-                  // 3. LINK Records (Explicit PDB connections - GLYCANS ONLY from LINK records)
-                  // We ONLY connect glycans based on explicit LINK records to avoid
-                  // incorrectly merging separate glycan chains that are spatially close
+                  // 3. LINK / SSBOND Records
                   for (let lnk of linkRecords) {
                       const idx1 = atomMap.get(`${lnk.c1}_${lnk.r1}`);
                       const idx2 = atomMap.get(`${lnk.c2}_${lnk.r2}`);
                       if (idx1 !== undefined && idx2 !== undefined) {
-                          // Only create bonds for LINK records involving glycans
-                          if (newAtoms[idx1].isGlycan || newAtoms[idx2].isGlycan) {
-                              const dist = Math.hypot(newAtoms[idx1].x-newAtoms[idx2].x, newAtoms[idx1].y-newAtoms[idx2].y, newAtoms[idx1].z-newAtoms[idx2].z);
+                          const dist = Math.hypot(newAtoms[idx1].x-newAtoms[idx2].x, newAtoms[idx1].y-newAtoms[idx2].y, newAtoms[idx1].z-newAtoms[idx2].z);
+                          if (lnk.type === 'ssbond' || lnk.type === 'disulf') {
+                              newBonds.push({ i: idx1, j: idx2, visualWeight: 0.8, d: dist });
+                              uf.union(idx1, idx2);
+                          } else if (newAtoms[idx1].isGlycan || newAtoms[idx2].isGlycan) {
                               newBonds.push({ i: idx1, j: idx2, visualWeight: 0.6, d: dist });
                               uf.union(idx1, idx2);
                           }
                       }
                   }
 
-                  // 4. ANCHOR PASS (Restricted Chemical Logic)
-                  // Group glycans by cluster
-                  const glycanClusters = new Map(); // Root -> [AtomIndices]
-                  for (let i of glycanIndices) {
-                      const root = uf.find(i);
-                      if (!glycanClusters.has(root)) glycanClusters.set(root, []);
-                      glycanClusters.get(root).push(i);
-                  }
-
-                  // Iterate over each isolated glycan tree
+                  // 4. ANCHOR PASS (Glycans)
+                  const glycanClusters = new Map();
+                  for (let i of glycanIndices) { const root = uf.find(i); if (!glycanClusters.has(root)) glycanClusters.set(root, []); glycanClusters.get(root).push(i); }
                   for (let [root, members] of glycanClusters) {
-                      let bestBond = null;
-                      let bestScore = Infinity; // Lower is better
-
+                      let bestBond = null, bestScore = Infinity;
                       for (let g of members) {
-                          const atomG = newAtoms[g];
-                          const isRootSugar = (atomG.resName === 'NAG' || atomG.resName === 'NDG' || atomG.resName === 'BMA');
-                          
+                          const atomG = newAtoms[g]; const isRootSugar = (atomG.resName === 'NAG' || atomG.resName === 'NDG' || atomG.resName === 'BMA');
                           for (let p of proteinIndices) {
-                              const atomP = newAtoms[p];
-                              const d = Math.hypot(atomG.x-atomP.x, atomG.y-atomP.y, atomG.z-atomP.z);
-                              
+                              const atomP = newAtoms[p], d = Math.hypot(atomG.x-atomP.x, atomG.y-atomP.y, atomG.z-atomP.z);
                               if (d > 6.0) continue; 
-
-                              let score = d;
-                              const isTargetRes = (atomP.resName === 'ASN' || atomP.resName === 'SER' || atomP.resName === 'THR');
-                              
-                              if (isRootSugar && isTargetRes) {
-                                  score *= 0.01; // Massive Priority to correct chemistry
-                              } else if (isRootSugar) {
-                                  score *= 0.5;  // Priority to correct Sugar type
-                              } else if (isTargetRes) {
-                                  score *= 0.8;  // Slight priority to correct Protein residue
-                              } else {
-                                  score *= 10.0; // Penalty for random sugar-protein contact
-                              }
-
-                              if (score < bestScore) {
-                                  bestScore = score;
-                                  bestBond = { i: g, j: p, d: d };
-                              }
+                              let score = d; const isTargetRes = (atomP.resName === 'ASN' || atomP.resName === 'SER' || atomP.resName === 'THR');
+                              if (isRootSugar && isTargetRes) score *= 0.01; else if (isRootSugar) score *= 0.5; else if (isTargetRes) score *= 0.8; else score *= 10.0;
+                              if (score < bestScore) { bestScore = score; bestBond = { i: g, j: p, d: d }; }
                           }
                       }
-
-                      // If we found a bond, we need to ensure we don't double-bond if a LINK existed.
-                      if (bestBond) {
-                          const rootG = uf.find(bestBond.i);
-                          const rootP = uf.find(bestBond.j);
-                          
-                          // Only add if they are NOT ALREADY connected (Floating Island)
-                          if (rootG !== rootP) {
-                              newBonds.push({ i: bestBond.i, j: bestBond.j, visualWeight: 0.6, d: bestBond.d });
-                              uf.union(bestBond.i, bestBond.j);
-                          }
-                      }
+                      if (bestBond) { if (uf.find(bestBond.i) !== uf.find(bestBond.j)) { newBonds.push({ i: bestBond.i, j: bestBond.j, visualWeight: 0.6, d: bestBond.d }); uf.union(bestBond.i, bestBond.j); } }
                   }
 
-                  // 5. Restraints & Colors
+                  // 4b. ANCHOR PASS (Cofactors)
+                  for (let c of cofactorIndices) {
+                      let bestDist = Infinity, bestIdx = -1;
+                      for (let p = 0; p < newAtoms.length; p++) {
+                          if (p === c || newAtoms[p].isCofactor) continue;
+                          const d = Math.hypot(newAtoms[c].x-newAtoms[p].x, newAtoms[c].y-newAtoms[p].y, newAtoms[c].z-newAtoms[p].z);
+                          if (d < bestDist) { bestDist = d; bestIdx = p; }
+                      }
+                      if (bestIdx >= 0 && bestDist < 5.0) { newBonds.push({ i: c, j: bestIdx, visualWeight: 0.5, d: bestDist }); uf.union(c, bestIdx); }
+                  }
+
                   const restraints = buildRestraintsSpatial(newAtoms);
                   
-                  // Build per-chain color state and picker UI
                   const palette = CHAIN_PALETTES['default'];
                   const uniqueChains = [...new Set(newAtoms.map(a => a.chain))].sort();
                   window.chainColors = {};
                   uniqueChains.forEach((ch, idx) => {
                       const c = palette[idx % palette.length];
-                      const hex = '#'
-                          + Math.round(c.r*255).toString(16).padStart(2,'0')
-                          + Math.round(c.g*255).toString(16).padStart(2,'0')
-                          + Math.round(c.b*255).toString(16).padStart(2,'0');
+                      const hex = '#' + Math.round(c.r*255).toString(16).padStart(2,'0') + Math.round(c.g*255).toString(16).padStart(2,'0') + Math.round(c.b*255).toString(16).padStart(2,'0');
                       window.chainColors[ch] = hex;
                   });
 
                   const chainSection = document.getElementById('chain-color-section');
                   if (chainSection) {
-                      const chainCounts = {};
-                      newAtoms.forEach(a => { chainCounts[a.chain] = (chainCounts[a.chain]||0)+1; });
+                      const chainCounts = {}; newAtoms.forEach(a => { chainCounts[a.chain] = (chainCounts[a.chain]||0)+1; });
                       let html = '<div class="section-title" style="margin-bottom:8px">Chains</div>';
                       uniqueChains.forEach(ch => {
-                          const hex = window.chainColors[ch];
-                          html += `<div class="flex items-center gap-2 mb-1">
-                              <input type="color" value="${hex}" onchange="updateChainColor('${ch}', this.value)"
-                                     style="width:24px;height:24px;border:none;background:none;padding:0;cursor:pointer;border-radius:4px;">
-                              <span class="text-xs text-gray-300 font-mono">Chain ${ch}</span>
-                              <span class="text-[10px] text-gray-500 ml-auto">${chainCounts[ch]} res</span>
-                          </div>`;
+                          html += `<div class="flex items-center gap-2 mb-1"><input type="color" value="${window.chainColors[ch]}" onchange="updateChainColor('${ch}', this.value)" style="width:24px;height:24px;border:none;background:none;padding:0;cursor:pointer;border-radius:4px;"><span class="text-xs text-gray-300 font-mono">Chain ${ch}</span><span class="text-[10px] text-gray-500 ml-auto">${chainCounts[ch]} res</span></div>`;
                       });
                       chainSection.innerHTML = html;
                       const cmodeOnLoad = document.getElementById('art-color-mode')?.value || 'density';
                       chainSection.style.display = (uniqueChains.length > 0 && cmodeOnLoad === 'chain') ? 'block' : 'none';
                   }
 
-                  // Build initial color array from chain colors
                   const colorArray = new Float32Array(newAtoms.length * 3);
                   for(let i=0; i<newAtoms.length; i++) {
-                      const atom = newAtoms[i];
-                      const hex = window.chainColors[atom.chain] || '#93c5fd';
-                      colorArray[i*3]   = parseInt(hex.slice(1,3),16)/255;
-                      colorArray[i*3+1] = parseInt(hex.slice(3,5),16)/255;
-                      colorArray[i*3+2] = parseInt(hex.slice(5,7),16)/255;
+                      const hex = window.chainColors[newAtoms[i].chain] || '#93c5fd';
+                      colorArray[i*3] = parseInt(hex.slice(1,3),16)/255; colorArray[i*3+1] = parseInt(hex.slice(3,5),16)/255; colorArray[i*3+2] = parseInt(hex.slice(5,7),16)/255;
                   }
 
                   const panel = document.getElementById('art-panel');
@@ -1758,20 +2262,18 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   ui.zoom.value = Math.round(fittedZoom); ui.zoomVal.textContent = Math.round(fittedZoom);
 
                   window.globalBonds = newBonds;
+                  
+                  document.getElementById('assembly-container').style.display = biomt.length > 1 ? 'flex' : 'none';
+                  const ensContainer = document.getElementById('ensemble-container');
+                  if (allModels.length > 1) { ensContainer.style.display = 'flex'; document.getElementById('ensemble-text').textContent = `Ensemble (${allModels.length})`; }
+                  else { ensContainer.style.display = 'none'; }
+
                   if (worker) {
-                      worker.postMessage({
-                          type: 'init',
-                          atoms: newAtoms,
-                          bonds: newBonds,
-                          restraints: restraints,
-                          colors: colorArray,
-                          width: artWidth,
-                          height: artHeight
-                      });
+                      worker.postMessage({ type: 'init', atoms: newAtoms, bonds: newBonds, restraints: restraints, angles: angleList, colors: colorArray, width: artWidth, height: artHeight });
+                      if (document.getElementById('model-ensemble').checked && allModels.length > 1) { worker.postMessage({ type: 'ensemble', models: allModels.slice(1) }); }
+                      else { worker.postMessage({ type: 'ensemble', models: [] }); }
                       window.updateWorkerParams();
-                      // If color mode is residue, override initial chain-colors with correct mode colors
-                      const initCM = document.getElementById('art-color-mode')?.value;
-                      if (initCM === 'residue') rebuildColorArray();
+                      const initCM = document.getElementById('art-color-mode')?.value; if (initCM === 'residue' || initCM === 'ss') rebuildColorArray();
                       worker.postMessage({ type: 'pause' });
                   }
 
@@ -1786,31 +2288,21 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   const bMat = renderer.flatMaterial.clone();
                   bondMeshes = new THREE.InstancedMesh(bGeo, bMat, newBonds.length);
                   
-                  scene.add(atomMeshes);
-                  scene.add(bondMeshes);
-
+                  scene.add(atomMeshes); scene.add(bondMeshes);
                   window.update3DColors();
 
                   for (let i=0; i<newAtoms.length; i++) {
-                      dummy.position.set(newAtoms[i].x, newAtoms[i].y, newAtoms[i].z);
-                      dummy.scale.setScalar(newAtoms[i].visualWeight);
-                      dummy.updateMatrix();
-                      atomMeshes.setMatrixAt(i, dummy.matrix);
+                      dummy.position.set(newAtoms[i].x, newAtoms[i].y, newAtoms[i].z); dummy.scale.setScalar(newAtoms[i].visualWeight);
+                      dummy.updateMatrix(); atomMeshes.setMatrixAt(i, dummy.matrix);
                   }
                   atomMeshes.instanceMatrix.needsUpdate = true;
 
                   for (let k=0; k<newBonds.length; k++) {
-                      const mx = (newAtoms[newBonds[k].i].x+newAtoms[newBonds[k].j].x)/2;
-                      const my = (newAtoms[newBonds[k].i].y+newAtoms[newBonds[k].j].y)/2;
-                      const mz = (newAtoms[newBonds[k].i].z+newAtoms[newBonds[k].j].z)/2;
-                      dummy.position.set(mx, my, mz);
-                      dummy.lookAt(newAtoms[newBonds[k].j].x, newAtoms[newBonds[k].j].y, newAtoms[newBonds[k].j].z);
+                      const mx = (newAtoms[newBonds[k].i].x+newAtoms[newBonds[k].j].x)/2, my = (newAtoms[newBonds[k].i].y+newAtoms[newBonds[k].j].y)/2, mz = (newAtoms[newBonds[k].i].z+newAtoms[newBonds[k].j].z)/2;
+                      dummy.position.set(mx, my, mz); dummy.lookAt(newAtoms[newBonds[k].j].x, newAtoms[newBonds[k].j].y, newAtoms[newBonds[k].j].z);
                       const d = Math.hypot(newAtoms[newBonds[k].i].x-newAtoms[newBonds[k].j].x, newAtoms[newBonds[k].i].y-newAtoms[newBonds[k].j].y, newAtoms[newBonds[k].i].z-newAtoms[newBonds[k].j].z);
-                      dummy.scale.set(1, 1, d);
-                      dummy.updateMatrix();
-                      bondMeshes.setMatrixAt(k, dummy.matrix);
+                      dummy.scale.set(1, 1, d); dummy.updateMatrix(); bondMeshes.setMatrixAt(k, dummy.matrix);
                   }
-                  bondMeshes.instanceColor.needsUpdate = true;
                   bondMeshes.instanceMatrix.needsUpdate = true;
                   
                   camera.position.set(0,0, Math.max(20, maxR*2.5)); controls.target.set(0,0,0); controls.update();
@@ -1833,8 +2325,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           
           for(let i=0; i<newAtoms.length; i++) {
               const k = getKey(newAtoms[i].x, newAtoms[i].y, newAtoms[i].z);
-              if(!cells.has(k)) cells.set(k, []);
-              cells.get(k).push(i);
+              if(!cells.has(k)) cells.set(k, []); cells.get(k).push(i);
           }
           
           const neighborOffsets = [];
@@ -1856,29 +2347,18 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   for(let i of atomsInCell) {
                       for(let j of neighbors) {
                           if(j <= i) continue; 
-                          
                           if (newAtoms[i].isGlycan || newAtoms[j].isGlycan) continue;
 
                           const dist = Math.hypot(newAtoms[i].x-newAtoms[j].x, newAtoms[i].y-newAtoms[j].y, newAtoms[i].z-newAtoms[j].z);
-                          
                           const bothNuc = newAtoms[i].isNucleic && newAtoms[j].isNucleic;
 
                           if (!bothNuc && dist < 8.0) {
                               let weight = Math.max(0, 1.0 - (dist / 8.0));
-                              weight = weight * weight * weight; // OPTIMIZED: STEEPER CURVE TO HIDE WEAK LINKS
+                              weight = weight * weight * weight; 
                               const avgW = (newAtoms[i].visualWeight + newAtoms[j].visualWeight) / 2;
-                              if (weight > 0.01) {
-                                  restraints.push({
-                                      i, j, 
-                                      nativeDist: dist, 
-                                      stiffness: weight, 
-                                      visualWeight: avgW * weight 
-                                  });
-                              }
+                              if (weight > 0.01) { restraints.push({ i, j, nativeDist: dist, stiffness: weight, visualWeight: avgW * weight }); }
                           } else if (bothNuc) {
-                              if (dist < 12.0) {
-                                  restraints.push({i, j, nativeDist: dist, strength: 1.0, visualWeight: 0.3});
-                              }
+                              if (dist < 12.0) { restraints.push({i, j, nativeDist: dist, strength: 1.0, visualWeight: 0.3}); }
                           }
                       }
                   }
@@ -1903,40 +2383,22 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       };
       
       window.setCamPreset = (view) => {
-          if (view === 'front') {
-             ui.rotX.value = 0; ui.rotY.value = 0; ui.rotZ.value = 0;
-             ui.panX.value = 0; ui.panY.value = 0;
-          } else if (view === 'top') {
-             ui.rotX.value = 90; ui.rotY.value = 0; ui.rotZ.value = 0;
-             ui.panX.value = 0; ui.panY.value = 0;
-          } else if (view === 'side') {
-             ui.rotX.value = 0; ui.rotY.value = 90; ui.rotZ.value = 0;
-             ui.panX.value = 0; ui.panY.value = 0;
-          }
-          window.updateWorkerParams();
-          window.clearArt(false);
+          if (view === 'front') { ui.rotX.value = 0; ui.rotY.value = 0; ui.rotZ.value = 0; ui.panX.value = 0; ui.panY.value = 0; } 
+          else if (view === 'top') { ui.rotX.value = 90; ui.rotY.value = 0; ui.rotZ.value = 0; ui.panX.value = 0; ui.panY.value = 0; } 
+          else if (view === 'side') { ui.rotX.value = 0; ui.rotY.value = 90; ui.rotZ.value = 0; ui.panX.value = 0; ui.panY.value = 0; }
+          window.updateWorkerParams(); window.clearArt(false);
       };
 
       window.toggleAutoSpin = (on) => {
-          if (on) {
-              autoSpinSpeed = parseFloat(ui.spinSpeed ? ui.spinSpeed.value : 5);
-              autoSpinAngle = parseFloat(ui.rotY.value) || 0;
-              autoSpinLastTime = 0; // reset timer so first dt is 0
-          } else {
-              autoSpinSpeed = 0;
-              autoSpinLastTime = 0;
-          }
+          if (on) { autoSpinSpeed = parseFloat(ui.spinSpeed ? ui.spinSpeed.value : 5); autoSpinAngle = parseFloat(ui.rotY.value) || 0; autoSpinLastTime = 0; } 
+          else { autoSpinSpeed = 0; autoSpinLastTime = 0; }
       };
-      window.updateSpinSpeed = (val) => {
-          if (ui.spinVal) ui.spinVal.textContent = val + ' °/s';
-          if (autoSpinSpeed !== 0) autoSpinSpeed = parseFloat(val);
-      };
+      window.updateSpinSpeed = (val) => { if (ui.spinVal) ui.spinVal.textContent = val + ' °/s'; if (autoSpinSpeed !== 0) autoSpinSpeed = parseFloat(val); };
 
       window.toggleRecordMenu = () => { ui.recMenu.style.display = ui.recMenu.style.display === 'flex' ? 'none' : 'flex'; }
       window.startRecording = (mode) => {
           if (!artCanvas) return;
-          ui.recMenu.style.display = 'none'; 
-          recordingMode = mode;
+          ui.recMenu.style.display = 'none'; recordingMode = mode;
           if (mode === 'boomerang' && artWidth > 2500) { toggleResolution('fast'); alert("Switched to Fast Mode for Boomerang recording."); }
           capturedFrames = []; boomerangPhase = 'forward';
           const stream = artCanvas.captureStream(30); 
@@ -1948,46 +2410,39 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           recordedChunks = [];
           mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
           mediaRecorder.onstop = () => {
-              const blob = new Blob(recordedChunks, { type: selectedMime });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              const ext = selectedMime.includes('mp4') ? 'mp4' : 'webm';
+              const blob = new Blob(recordedChunks, { type: selectedMime }); const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; const ext = selectedMime.includes('mp4') ? 'mp4' : 'webm';
               a.download = `chaos_${currentPdbId}_${ui.theme.value}_${mode}.${ext}`;
               document.body.appendChild(a); a.click(); document.body.removeChild(a);
-              state.isRecording = false;
-              ui.recordBtn.classList.remove('recording');
+              state.isRecording = false; ui.recordBtn.classList.remove('recording');
               ui.recordBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>';
-              ui.recProgress.style.width = '0%';
-              if (worker) worker.postMessage({type: 'rec_stop'});
-              capturedFrames = [];
+              ui.recProgress.style.width = '0%'; if (worker) worker.postMessage({type: 'rec_stop'}); capturedFrames = [];
           };
-          state.isRecording = true;
-          if (worker) worker.postMessage({type: 'rec_start'});
-          mediaRecorder.start();
-          ui.recordBtn.classList.add('recording');
-          ui.recordBtn.innerHTML = '<span class="text-[10px] font-bold">REC</span>';
+          state.isRecording = true; if (worker) worker.postMessage({type: 'rec_start'});
+          mediaRecorder.start(); ui.recordBtn.classList.add('recording'); ui.recordBtn.innerHTML = '<span class="text-[10px] font-bold">REC</span>';
           if (mode === 'free') { setTimeout(() => { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }, 5000); }
       };
       
-
-
       function handleWorkerMessage(e) {
           const msg = e.data;
           if (msg.type === 'state') { state.workerRunning = !!msg.running; updateStatusUI(); return; }
           if (msg.type === 'idle') { workerTickInFlight = false; return; }
           if (msg.type === 'update') {
               workerTickInFlight = false;
-              const pos = msg.positions;
-              const buf = msg.buffer;
+              const pos = msg.positions, buf = msg.buffer, dbuf = msg.depthBuffer;
               if (msg.time !== undefined && ui.simTimer) ui.simTimer.innerText = "t: " + msg.time.toFixed(2);
-              frameCounter++;
+              if (msg.frames !== undefined && ui.accumCounter) ui.accumCounter.innerText = "frames: " + msg.frames;
+              frameCounter = msg.frames || frameCounter + 1;
               if (buf) {
                   const isHistoryMode = !ui.history.disabled && (parseInt(ui.history.value) < parseInt(ui.history.max));
-                  // NOTE: renderDisplay(buf) and latestBuffer copy must happen before buf is transferred below
-                  if (!isHistoryMode) { latestBuffer = new Float32Array(buf); renderDisplay(buf); }
-                  // Return the buffer to the worker (ping-pong transferable)
-                  if (worker) worker.postMessage({ type: 'buf_return', buffer: buf, gen: msg.gen }, [buf.buffer]);
+                  if (!isHistoryMode) { 
+                      latestBuffer = new Float32Array(buf); 
+                      if (dbuf) latestDepthBuffer = new Float32Array(dbuf);
+                      renderDisplay(); 
+                  }
+                  let transferArr = [buf.buffer];
+                  if (dbuf) transferArr.push(dbuf.buffer);
+                  if (worker) worker.postMessage({ type: 'buf_return', buffer: buf, depthBuffer: dbuf, gen: msg.gen }, transferArr);
                   if (state.workerRunning && ui.autoHistoryToggle && ui.autoHistoryToggle.checked) {
                       const interval = parseInt(ui.autoHistoryInterval.value) || 240;
                       if (interval > 0 && frameCounter % interval === 0) pushSnapshot(latestBuffer);
@@ -1997,10 +2452,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   for (let i = 0; i < atomMeshes.count; i++) {
                       const x = pos[i*3], y = pos[i*3+1], z = pos[i*3+2];
                       if (isNaN(x)) dummy.position.set(0, 0, 0); else dummy.position.set(x, y, z);
-                      if (window.globalAtoms && window.globalAtoms[i]) dummy.scale.setScalar(window.globalAtoms[i].visualWeight);
-                      else dummy.scale.set(1,1,1);
-                      dummy.updateMatrix();
-                      atomMeshes.setMatrixAt(i, dummy.matrix);
+                      if (window.globalAtoms && window.globalAtoms[i]) dummy.scale.setScalar(window.globalAtoms[i].visualWeight); else dummy.scale.set(1,1,1);
+                      dummy.updateMatrix(); atomMeshes.setMatrixAt(i, dummy.matrix);
                   }
                   atomMeshes.instanceMatrix.needsUpdate = true;
                   if (bondMeshes && window.globalBonds) {
@@ -2010,11 +2463,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                           const bx = pos[b.j*3], by = pos[b.j*3+1], bz = pos[b.j*3+2];
                           if (isNaN(ax) || isNaN(bx)) continue; 
                           const dist = Math.hypot(bx-ax, by-ay, bz-az);
-                          dummy.position.set((ax+bx)/2, (ay+by)/2, (az+bz)/2);
-                          dummy.lookAt(bx, by, bz);
-                          dummy.scale.set(1, 1, dist);
-                          dummy.updateMatrix();
-                          bondMeshes.setMatrixAt(k, dummy.matrix);
+                          dummy.position.set((ax+bx)/2, (ay+by)/2, (az+bz)/2); dummy.lookAt(bx, by, bz);
+                          dummy.scale.set(1, 1, dist); dummy.updateMatrix(); bondMeshes.setMatrixAt(k, dummy.matrix);
                       }
                       bondMeshes.instanceMatrix.needsUpdate = true;
                   }
@@ -2022,141 +2472,140 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           }
       }
       
-      // ... (Helper functions for UI, rendering, colors, etc. kept same as before)
       function acesToneMap(x) {
-          // ACES fitted curve (Hill 2015) — richer shadows, graceful highlight roll-off
           if (x <= 0) return 0;
           const v = (x*(2.51*x+0.03)) / (x*(2.43*x+0.59)+0.14);
           return v < 0 ? 0 : v > 1 ? 1 : v;
       }
+      
       function renderDisplay(buffer) {
           const buf = buffer || latestBuffer;
           if (!buf || !viewImageData) return;
           
           const isRGB = buf.length === viewImageData.width * viewImageData.height * 3;
-          const theme = ui.theme.value;
-          const data = viewImageData.data;
+          const theme = ui.theme.value; const data = viewImageData.data;
           const artMode = document.getElementById('art-color-mode')?.value || 'density';
           const bg = (artMode === 'density') ? getThemeBackground(theme) : getChainBackground();
           
-          // 1. Unified Auto-Exposure Calculation
-          let localMax = 0;
-          const step = isRGB ? 3 : 1;
-          const stride = (Math.floor(buf.length / 3000) || 1) * step; 
-          
-          for(let i=0; i<buf.length; i+=stride) {
-              let val = buf[i];
-              if (isRGB) {
-                  // For RGB, approximate intensity with the strongest channel
-                  val = Math.max(buf[i], buf[i+1], buf[i+2]);
-              }
-              if(val > localMax) localMax = val;
+          const step = isRGB ? 3 : 1; const stride = (Math.floor(buf.length / 3000) || 1) * step;
+          const samples = [];
+          for (let i = 0; i < buf.length; i += stride) {
+              let val = buf[i]; if (isRGB) val = Math.max(buf[i], buf[i+1], buf[i+2]);
+              if (val > 0) samples.push(val);
           }
-
-          if(localMax > displayMax) displayMax = displayMax * 0.9 + localMax * 0.1; 
-          else displayMax = displayMax * 0.99 + localMax * 0.01;
-          if(displayMax < 0.1) displayMax = 0.1;
+          samples.sort((a, b) => a - b);
+          const p995 = samples.length > 10 ? samples[Math.floor(samples.length * 0.995)] : (samples[samples.length - 1] || 0.1);
+          if (p995 > displayMax) displayMax = displayMax * 0.7 + p995 * 0.3; else displayMax = displayMax * 0.97 + p995 * 0.03;
+          if (displayMax < 0.1) displayMax = 0.1;
           
-          const threshold = parseFloat(ui.gamma.value);
-          const sharpness = parseFloat(ui.softness.value);
-
-          // Tone mapping: power curve (sharpness = invGamma) then threshold clip
-          //   1. log1p compresses accumulation dynamic range → logC in [0,1]
-          //   2. Power curve: pow(logC, sharpness) — sharpness>1 crushes darks (like original invGamma)
-          //   3. Hard clip: powered ≤ threshold → background; otherwise rescale [threshold,1] → [0,1]
-          //   4. ACES filmic shoulder for graceful highlight roll-off.
-          const ACES_NORM = 0.8037974683;
-          const logDen = Math.log1p(displayMax);
-          const threshRange = 1.0 - threshold || 1e-6;
+          const threshold = parseFloat(ui.gamma.value); const sharpness = parseFloat(ui.softness.value);
+          const ACES_NORM = 0.8037974683; const logDen = Math.log1p(displayMax); const threshRange = 1.0 - threshold || 1e-6;
+          
           function toneMap(logC) {
-              const powered = Math.pow(logC, sharpness); // same mechanism as original invGamma
+              const powered = Math.pow(logC, sharpness); 
               if (powered <= threshold) return 0;
-              const norm = (powered - threshold) / threshRange; // rescale to [0,1]
+              const norm = (powered - threshold) / threshRange; 
               return acesToneMap(norm) / ACES_NORM;
           }
 
           if (!isRGB) {
               const useGrain = (theme === 'rough' || theme === 'charcoal' || theme === 'graphite') && grainMap;
-
               for (let i = 0; i < buf.length; i++) {
-                  const val = buf[i];
-                  const idx = i * 4;
+                  const val = buf[i]; const idx = i * 4;
                   let r = bg.r, g = bg.g, b = bg.b;
                   if (val > 0.0) {
-                      const logC = Math.log1p(val) / logDen;
-                      const norm = toneMap(logC);
-                      if (norm > 0) {
-                          const rgb = applyTheme(theme, norm, bg);
-                          r = rgb.r; g = rgb.g; b = rgb.b;
-                      }
+                      const logC = Math.log1p(val) / logDen; const norm = toneMap(logC);
+                      if (norm > 0) { const rgb = applyTheme(theme, norm, bg); r = rgb.r; g = rgb.g; b = rgb.b; }
                   }
                   if (useGrain && grainMap) {
-                      const gx2 = (i % artWidth) & 255;
-                      const gy2 = Math.floor(i / artWidth) & 255;
-                      const rawG = grainMap[gy2*256+gx2];
-                      const lum = (r + g + b) / 765.0;
-                      const gs = 1.0 - lum * 0.75;
+                      const gx2 = (i % artWidth) & 255, gy2 = Math.floor(i / artWidth) & 255;
+                      const rawG = grainMap[gy2*256+gx2]; const lum = (r + g + b) / 765.0; const gs = 1.0 - lum * 0.75;
                       const grain = 0.88 + rawG * 0.12 * gs;
                       r = r * grain; g = g * grain; b = b * grain;
                   }
                   data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255;
               }
           } else {
-              const len = buf.length / 3;
-              const chainStyle = document.getElementById('chain-style')?.value || 'normal';
-              const bgLight = bg.r > 128;
+              const len = buf.length / 3; const chainStyle = document.getElementById('chain-style')?.value || 'normal'; const bgLight = bg.r > 128;
               for (let i = 0; i < len; i++) {
                   const idx = i * 4;
                   let r = toneMap(Math.log1p(buf[i*3])   / logDen);
                   let g = toneMap(Math.log1p(buf[i*3+1]) / logDen);
                   let b = toneMap(Math.log1p(buf[i*3+2]) / logDen);
-                  if (r === 0 && g === 0 && b === 0) {
-                      data[idx] = bg.r; data[idx+1] = bg.g; data[idx+2] = bg.b; data[idx+3] = 255;
-                      continue;
-                  }
-                  if (chainStyle === 'neon') {
-                      const avg = (r + g + b) / 3;
-                      r = Math.min(1, avg + (r - avg) * 1.8);
-                      g = Math.min(1, avg + (g - avg) * 1.8);
-                      b = Math.min(1, avg + (b - avg) * 1.8);
-                  } else if (chainStyle === 'inkwash') {
-                      const lum = 0.299*r + 0.587*g + 0.114*b;
-                      r = lum + (r - lum) * 0.25;
-                      g = lum + (g - lum) * 0.25;
-                      b = lum + (b - lum) * 0.25;
-                      if (bgLight) { r = 1 - r; g = 1 - g; b = 1 - b; }
-                  } else if (chainStyle === 'faded') {
-                      r *= 0.6; g *= 0.6; b *= 0.6;
-                  }
+                  if (r === 0 && g === 0 && b === 0) { data[idx] = bg.r; data[idx+1] = bg.g; data[idx+2] = bg.b; data[idx+3] = 255; continue; }
+                  if (chainStyle === 'neon') { const avg = (r + g + b) / 3; r = Math.min(1, avg + (r - avg) * 1.8); g = Math.min(1, avg + (g - avg) * 1.8); b = Math.min(1, avg + (b - avg) * 1.8); } 
+                  else if (chainStyle === 'inkwash') { const lum = 0.299*r + 0.587*g + 0.114*b; r = lum + (r - lum) * 0.25; g = lum + (g - lum) * 0.25; b = lum + (b - lum) * 0.25; if (bgLight) { r = 1 - r; g = 1 - g; b = 1 - b; } } 
+                  else if (chainStyle === 'faded') { r *= 0.6; g *= 0.6; b *= 0.6; }
                   data[idx] = r * 255; data[idx+1] = g * 255; data[idx+2] = b * 255; data[idx+3] = 255;
               }
           }
           
           artCtx.putImageData(viewImageData, 0, 0);
 
-          // Bloom pass: downsample → blur → screen-blend back
+          // Apply Depth of Field
+          const dofStrength = parseFloat(ui.dofStrength?.value || '0');
+          if (dofStrength > 0.01) {
+              const focusPlane = parseFloat(ui.dofFocus?.value || '0.5');
+              const maxBlur = Math.round(dofStrength * artWidth * 0.02);
+              const tempCanvas = document.createElement('canvas'); tempCanvas.width = artWidth >> 1; tempCanvas.height = artHeight >> 1;
+              const tempCtx = tempCanvas.getContext('2d');
+              artCtx.save();
+              tempCtx.filter = `blur(${maxBlur}px)`; tempCtx.drawImage(artCanvas, 0, 0, tempCanvas.width, tempCanvas.height); tempCtx.filter = 'none';
+
+              const maskCanvas = document.createElement('canvas'); maskCanvas.width = artWidth; maskCanvas.height = artHeight;
+              const maskCtx = maskCanvas.getContext('2d');
+              const focusY = focusPlane; const bandWidth = 0.15;
+              if (latestDepthBuffer && latestDepthBuffer.length === artWidth * artHeight) {
+                  const maskImg = maskCtx.createImageData(artWidth, artHeight);
+                  const mData = maskImg.data;
+                  for (let i = 0; i < latestDepthBuffer.length; i++) {
+                      const zNorm = latestDepthBuffer[i];
+                      const diff = Math.abs(zNorm - focusPlane);
+                      let alpha = 0;
+                      if (diff > bandWidth * 0.5) {
+                          alpha = Math.min(1.0, (diff - bandWidth * 0.5) / bandWidth);
+                      }
+                      const idx = i * 4;
+                      mData[idx] = 0; mData[idx+1] = 0; mData[idx+2] = 0; mData[idx+3] = alpha * dofStrength * 255;
+                  }
+                  maskCtx.putImageData(maskImg, 0, 0);
+              } else {
+                  const gradient = maskCtx.createLinearGradient(0, 0, 0, artHeight);
+                  gradient.addColorStop(0, `rgba(0,0,0,${dofStrength})`);
+                  gradient.addColorStop(Math.max(0, focusY - bandWidth), `rgba(0,0,0,${dofStrength * 0.5})`);
+                  gradient.addColorStop(focusY, 'rgba(0,0,0,0)');
+                  gradient.addColorStop(Math.min(1, focusY + bandWidth), `rgba(0,0,0,${dofStrength * 0.5})`);
+                  gradient.addColorStop(1, `rgba(0,0,0,${dofStrength})`);
+                  maskCtx.fillStyle = gradient; maskCtx.fillRect(0, 0, artWidth, artHeight);
+              }
+              maskCtx.globalCompositeOperation = 'source-in';
+              maskCtx.drawImage(tempCanvas, 0, 0, artWidth, artHeight);
+              
+              artCtx.globalCompositeOperation = 'source-over';
+              artCtx.drawImage(maskCanvas, 0, 0);
+              artCtx.restore();
+          }
+
+          // Bloom pass
           const bloomVal = ui.bloom ? parseFloat(ui.bloom.value) : 0;
           if (bloomVal > 0.005 && bloomCanvas) {
-              const bpx = Math.max(1, Math.round(bloomCanvas.width / 64));
-              bloomCtx.clearRect(0, 0, bloomCanvas.width, bloomCanvas.height);
-              bloomCtx.filter = `blur(${bpx}px)`;
-              bloomCtx.drawImage(artCanvas, 0, 0, bloomCanvas.width, bloomCanvas.height);
-              bloomCtx.filter = 'none';
-              artCtx.save();
-              artCtx.globalCompositeOperation = 'screen';
-              artCtx.globalAlpha = bloomVal;
-              artCtx.drawImage(bloomCanvas, 0, 0, artWidth, artHeight);
+              const bw=bloomCanvas.width, bh=bloomCanvas.height;
+              artCtx.save(); artCtx.globalCompositeOperation = 'screen';
+              bloomCtx.clearRect(0,0,bw,bh); bloomCtx.filter=`blur(${Math.max(1,bw>>6)}px)`; bloomCtx.drawImage(artCanvas,0,0,bw,bh); bloomCtx.filter='none';
+              artCtx.globalAlpha=bloomVal*0.6; artCtx.drawImage(bloomCanvas,0,0,artWidth,artHeight);
+              const bw2=Math.max(1,bw>>1),bh2=Math.max(1,bh>>1); bloomCtx.clearRect(0,0,bw,bh); bloomCtx.filter=`blur(${Math.max(2,bw>>4)}px)`; bloomCtx.drawImage(artCanvas,0,0,bw2,bh2); bloomCtx.filter='none';
+              artCtx.globalAlpha=bloomVal*0.3; artCtx.drawImage(bloomCanvas,0,0,bw2,bh2,0,0,artWidth,artHeight);
+              const bw3=Math.max(1,bw>>2),bh3=Math.max(1,bh>>2); bloomCtx.clearRect(0,0,bw,bh); bloomCtx.filter=`blur(${Math.max(3,bw>>3)}px)`; bloomCtx.drawImage(artCanvas,0,0,bw3,bh3); bloomCtx.filter='none';
+              artCtx.globalAlpha=bloomVal*0.15; artCtx.drawImage(bloomCanvas,0,0,bw3,bh3,0,0,artWidth,artHeight);
               artCtx.restore();
           }
 
           if (state.isRecording) {
               drawWatermarks(artCtx, artWidth, artHeight, theme, bg);
-              if (recordingMode === 'boomerang' && boomerangPhase === 'forward') {
-                  const snapData = artCtx.getImageData(0, 0, artWidth, artHeight);
-                  capturedFrames.push(snapData);
-              }
+              if (recordingMode === 'boomerang' && boomerangPhase === 'forward') { capturedFrames.push(artCtx.getImageData(0, 0, artWidth, artHeight)); }
           }
       }
+
       function drawWatermarks(ctx, w, h, theme, bg) {
           const margin = Math.max(20, Math.round(h * 0.03));
           ctx.save();
@@ -2172,6 +2621,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           ctx.fillText("ProteinCHAOS", w - margin, h - margin);
           ctx.restore();
       }
+
       function getThemeBackground(theme) {
           if (['ink', 'graphite', 'sakura', 'lab', 'editorial', 'rough'].includes(theme)) return {r: 255, g: 255, b: 255};
           if (theme === 'charcoal') return {r: 30, g: 30, b: 30}; 
@@ -2182,9 +2632,9 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (theme === 'magma') return {r: 15, g: 0, b: 30};
           if (theme === 'blueprint') return {r: 10, g: 30, b: 80};
           if (theme === 'bio') return {r: 5, g: 20, b: 5};
-          // Chain theme default black bg
           return {r: 0, g: 0, b: 0};
       }
+
       function applyTheme(theme, t, bg) {
           let r = 0, g = 0, b = 0;
           if (theme === 'sunset') { r = t * 255 + Math.sin(t*Math.PI)*50; g = Math.max(0, t - 0.4) * 255; b = Math.max(0, 0.5 - t) * 200 + Math.max(0, t - 0.8) * 255; }
@@ -2209,6 +2659,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           else { r = t * 100; g = t * 150; b = t * 255; }
           return {r, g, b};
       }
+
       function setupThreeJS() {
           const c3d = document.getElementById('canvas-3d');
           if (renderer) { renderer.dispose(); if (c3d.contains(renderer.domElement)) c3d.removeChild(renderer.domElement); renderer = null; }
@@ -2219,6 +2670,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NoToneMapping; 
           renderer.setSize(c3d.clientWidth, c3d.clientHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
           c3d.appendChild(renderer.domElement);
+          renderer.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); });
+          renderer.domElement.addEventListener('webglcontextrestored', () => { setupThreeJS(); if (window.globalAtoms) window.update3DColors(); });
           controls = new ArcballControls(camera, renderer.domElement, scene); controls.setGizmosVisible(false); controls.enableDamping = true;
           const ambient = new THREE.AmbientLight(0xffffff, 1.4); scene.add(ambient);
           renderer.flatMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
@@ -2234,19 +2687,18 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
               renderer.setSize(c3d.clientWidth, c3d.clientHeight); if (composer) composer.setSize(c3d.clientWidth, c3d.clientHeight);
           });
       }
+
       function setupCanvasResolution() {
           const panel = document.getElementById('art-panel');
           let w = panel.clientWidth || 800; let h = panel.clientHeight || 600;
           const resMode = ui.resToggle.dataset.state === 'right' ? 'high' : 'fast';
           let targetHeight = 2160; let scale = 1.0;
           if (resMode === 'fast') { targetHeight = h; scale = 1.0; } else { targetHeight = 2160; scale = Math.max(1.0, targetHeight / h); }
-          renderScale = scale;
-          artWidth = Math.floor(w * scale); artHeight = Math.floor(h * scale);
+          renderScale = scale; artWidth = Math.floor(w * scale); artHeight = Math.floor(h * scale);
           artWidth = Math.min(artWidth, 7680); artHeight = Math.min(artHeight, 4320);
           artCanvas.width = artWidth; artCanvas.height = artHeight;
           viewImageData = new ImageData(artWidth, artHeight);
           artCanvas.style.opacity = '1';
-          // 256×256 tiled value-noise grain (256KB vs up to 32MB at 4K)
           const GTILE = 256, GGRID = 16;
           const gGrid = new Float32Array(GGRID * GGRID);
           for (let i = 0; i < gGrid.length; i++) gGrid[i] = Math.random();
@@ -2257,37 +2709,31 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   const xi = Math.floor(wx) % GGRID, yi = Math.floor(wy) % GGRID;
                   const xi1 = (xi+1)%GGRID, yi1 = (yi+1)%GGRID;
                   const fx = wx - Math.floor(wx), fy = wy - Math.floor(wy);
-                  const ux = fx*fx*(3-2*fx), uy = fy*fy*(3-2*fy); // smoothstep
-                  const v = gGrid[yi*GGRID+xi]*(1-ux)*(1-uy)
-                          + gGrid[yi*GGRID+xi1]*ux*(1-uy)
-                          + gGrid[yi1*GGRID+xi]*(1-ux)*uy
-                          + gGrid[yi1*GGRID+xi1]*ux*uy;
-                  grainMap[gy*GTILE+gx] = v; // 0..1
+                  const ux = fx*fx*(3-2*fx), uy = fy*fy*(3-2*fy); 
+                  const v = gGrid[yi*GGRID+xi]*(1-ux)*(1-uy) + gGrid[yi*GGRID+xi1]*ux*(1-uy) + gGrid[yi1*GGRID+xi]*(1-ux)*uy + gGrid[yi1*GGRID+xi1]*ux*uy;
+                  grainMap[gy*GTILE+gx] = v; 
               }
           }
-          bloomCanvas = document.createElement('canvas');
-          bloomCanvas.width  = Math.max(1, artWidth  >> 2);
-          bloomCanvas.height = Math.max(1, artHeight >> 2);
+          bloomCanvas = document.createElement('canvas'); bloomCanvas.width  = Math.max(1, artWidth  >> 2); bloomCanvas.height = Math.max(1, artHeight >> 2);
           bloomCtx = bloomCanvas.getContext('2d');
       }
+
       window.toggleResolution = (forceMode) => {
           const toggle = ui.resToggle;
           let newState = toggle.dataset.state === 'right' ? 'left' : 'right';
           if (forceMode) newState = forceMode === 'high' ? 'right' : 'left';
-          toggle.dataset.state = newState;
-          const isHigh = newState === 'right';
+          toggle.dataset.state = newState; const isHigh = newState === 'right';
           ui.resOptions[0].classList.toggle('active', !isHigh); ui.resOptions[1].classList.toggle('active', isHigh);
           updateResolution();
       }
       window.updateResolution = () => { setupCanvasResolution(); window.updateWorkerParams(); if(worker) worker.postMessage({ type: 'resize', width: artWidth, height: artHeight }); window.clearArt(false); };
+      
       window.updateWorkerParams = () => {
           if (!worker) return;
-          let rawDecay = parseFloat(ui.decay.value);
-          let decayFactor = rawDecay / 100.0; if (rawDecay >= 99.9) decayFactor = 1.0;
+          let rawDecay = parseFloat(ui.decay.value), decayFactor = rawDecay / 100.0; if (rawDecay >= 99.9) decayFactor = 1.0;
           const scaledZoom = parseFloat(ui.zoom.value) * renderScale;
-          let cmode = 'density';
-          const artCM = document.getElementById('art-color-mode')?.value || 'density';
-          if (artCM === 'chain' || artCM === 'residue') cmode = 'chain';
+          let cmode = 'density'; const artCM = document.getElementById('art-color-mode')?.value || 'density';
+          if (artCM === 'chain' || artCM === 'residue' || artCM === 'ss') cmode = 'chain';
 
           worker.postMessage({
               type: 'params',
@@ -2295,25 +2741,25 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   temp: parseFloat(ui.temp.value), k: parseFloat(ui.k.value), speed: parseFloat(ui.speed.value),
                   zoom: scaledZoom, jitter: parseFloat(ui.jitter.value), intensity: parseFloat(ui.intensity.value),
                   source: ui.source.value, decay: decayFactor,
+                  depthFog: parseFloat(ui.depthfog ? ui.depthfog.value : '0.3'),
                   rotX: parseFloat(ui.rotX.value), rotY: parseFloat(ui.rotY.value), rotZ: parseFloat(ui.rotZ.value),
                   panX: parseFloat(ui.panX.value) * renderScale, panY: parseFloat(ui.panY.value) * renderScale,
                   colorMode: cmode
               }
           });
       };
+
       window.update3DColors = () => {
           const mode = ui.viewColorMode.value;
           if (!atomMeshes || !window.globalAtoms) return;
           const atomColors = [];
-
           for (let i=0; i < window.globalAtoms.length; i++) {
             const atom = window.globalAtoms[i]; let color;
             if (mode === 'chain') {
-               const hex = window.chainColors && window.chainColors[atom.chain]
-                   ? window.chainColors[atom.chain] : '#93c5fd';
+               const hex = window.chainColors && window.chainColors[atom.chain] ? window.chainColors[atom.chain] : '#93c5fd';
                color = new THREE.Color(hex);
             } else {
-               let base = atom.isNucleic ? VIEW_DNA_COLORS : (atom.isGlycan ? VIEW_GLYCAN_COLORS : VIEW_PROTEIN_COLORS);
+               let base = atom.isNucleic ? VIEW_DNA_COLORS : (atom.isGlycan ? VIEW_GLYCAN_COLORS : (atom.isCofactor ? VIEW_COFACTOR_COLORS : VIEW_PROTEIN_COLORS));
                color = base[i % base.length].clone();
             }
             const final = color.multiplyScalar(atom.visualWeight * 0.5 + 0.5);
@@ -2322,13 +2768,13 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           atomMeshes.instanceColor.needsUpdate = true;
           if (bondMeshes && window.globalBonds) {
              for (let k=0; k < window.globalBonds.length; k++) {
-                const b = window.globalBonds[k];
-                const c = atomColors[b.i].clone().lerp(atomColors[b.j], 0.5);
+                const b = window.globalBonds[k], c = atomColors[b.i].clone().lerp(atomColors[b.j], 0.5);
                 bondMeshes.setColorAt(k, c);
              }
              bondMeshes.instanceColor.needsUpdate = true;
           }
       };
+
       window.toggleSim = (forceState) => {
           if (!state.hasStructure && forceState !== false) { alert("Load or fetch a structure first."); return; }
           const next = typeof forceState === 'boolean' ? forceState : !state.isRunning;
@@ -2337,15 +2783,19 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (worker) worker.postMessage({ type: state.isRunning ? 'start' : 'pause' });
           updateStatusUI();
       };
+      
       window.clearArt = (preserveHistory = true) => {
           if (worker) worker.postMessage({type: 'clear'});
-          displayMax = 1.0; frameCounter = 0; if (latestBuffer) latestBuffer.fill(0);
+          displayMax = 1.0; if (latestBuffer) latestBuffer.fill(0);
           artCtx.clearRect(0, 0, artWidth, artHeight);
           if (!preserveHistory) { historyStack = []; ui.history.disabled = true; ui.history.value = 0; ui.historyCount.innerText = '0'; }
           if(ui.simTimer) ui.simTimer.innerText = "t: 0.00";
+          if(ui.accumCounter) ui.accumCounter.innerText = "frames: 0";
           renderDisplay();
       };
+
       window.saveSnapshot = () => { if (!latestBuffer) return; pushSnapshot(latestBuffer); };
+      
       window.pushSnapshot = (srcBuffer) => {
           if (!srcBuffer) return; const clone = new Float32Array(srcBuffer);
           historyStack.push(clone); if (historyStack.length > MAX_HISTORY) historyStack.shift();
@@ -2354,7 +2804,9 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (wasAtEnd) ui.history.value = historyStack.length - 1;
           ui.historyCount.innerText = historyStack.length;
       };
+      
       ui.history.oninput = (e) => { const idx = parseInt(e.target.value); if (historyStack[idx]) { latestBuffer = new Float32Array(historyStack[idx]); renderDisplay(); } };
+      
       window.downloadHighRes = () => {
           const osc = document.createElement('canvas'); osc.width = artWidth; osc.height = artHeight;
           const ctx = osc.getContext('2d'); const theme = ui.theme.value; const bg = getThemeBackground(theme);
@@ -2362,59 +2814,104 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           ctx.drawImage(artCanvas, 0, 0); drawWatermarks(ctx, artWidth, artHeight, theme, bg);
           osc.toBlob(blob => {
               const url = URL.createObjectURL(blob); const a = document.createElement('a');
-              a.download = `chaos_vc_${currentPdbId}_${theme}.png`; a.href = url; a.click();
+              a.download = `chaos_${currentPdbId}_${theme}.png`; a.href = url; a.click();
           });
       };
+
+      window.exportSVG = () => {
+          if (!window.globalAtoms || !window.globalBonds) { alert('Load a structure first'); return; }
+          const atoms = window.globalAtoms, bonds = window.globalBonds, w = artWidth, h = artHeight;
+          const theme = ui.theme.value, bg = getThemeBackground(theme);
+          const zoom = parseFloat(ui.zoom.value) * renderScale;
+          const panX = parseFloat(ui.panX.value) * renderScale, panY = parseFloat(ui.panY.value) * renderScale;
+          
+          const radX = (parseFloat(ui.rotX.value)||0)*Math.PI/180, radY = (parseFloat(ui.rotY.value)||0)*Math.PI/180, radZ = (parseFloat(ui.rotZ.value)||0)*Math.PI/180;
+          const cxr=Math.cos(radX),sxr=Math.sin(radX), cyr=Math.cos(radY),syr=Math.sin(radY), czr=Math.cos(radZ),szr=Math.sin(radZ);
+          const m00=cyr*czr, m01=czr*sxr*syr-cxr*szr, m02=cxr*czr*syr+sxr*szr, m10=cyr*szr, m11=cxr*czr+sxr*syr*szr, m12=cxr*syr*szr-czr*sxr;
+
+          const projected = atoms.map(a => ({
+              x: (m00*a.x + m01*a.y + m02*a.z) * zoom + w/2 + panX,
+              y: (m10*a.x + m11*a.y + m12*a.z) * zoom + h/2 + panY,
+          }));
+
+          let svg = `<?xml version="1.0" encoding="UTF-8"?>\n<!-- ProteinCHAOS SVG Export | ${currentPdbId} | Theme: ${theme} -->\n<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n<rect width="100%" height="100%" fill="rgb(${bg.r},${bg.g},${bg.b})" />\n<g opacity="0.8">\n`;
+
+          const midColor = applyTheme(theme, 0.7, bg);
+          const defaultStroke = `rgb(${Math.round(midColor.r)},${Math.round(midColor.g)},${Math.round(midColor.b)})`;
+          const cMode = document.getElementById('art-color-mode')?.value || 'density';
+
+          for (const bond of bonds) {
+              const p1 = projected[bond.i], p2 = projected[bond.j], vw = bond.visualWeight || 0.5;
+              const strokeWidth = Math.max(0.3, vw * 2);
+              let strokeColor = defaultStroke;
+              if (cMode === 'chain') strokeColor = window.chainColors[atoms[bond.i].chain] || defaultStroke;
+              svg += `  <line x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" opacity="${vw}" />\n`;
+          }
+          svg += `</g>\n</svg>`;
+          
+          const blob = new Blob([svg], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.download = `chaos_${currentPdbId}_${theme}.svg`;
+          a.href = url; a.click(); URL.revokeObjectURL(url);
+      };
+
       window.copyToClipboard = () => {
           if (!latestBuffer) { alert("Nothing to copy yet — run the simulation first."); return; }
           artCanvas.toBlob(blob => {
               if (!blob) return;
               try {
-                  navigator.clipboard.write([new ClipboardItem({'image/png': blob})])
-                      .then(() => { /* silent success */ })
-                      .catch(() => alert("Clipboard write failed — try downloading instead."));
+                  navigator.clipboard.write([new ClipboardItem({'image/png': blob})]).then(() => { /* silent success */ }).catch(() => alert("Clipboard write failed — try downloading instead."));
               } catch(e) { alert("Clipboard API not available in this browser."); }
           });
       };
+
       window.handleFileUpload = (input) => {
           const f = input.files[0]; if (!f) return; 
-          const name = f.name.split('.')[0].toUpperCase().substring(0, 8); currentPdbId = name || "CUSTOM";
+          const name = f.name.replace(/\.(pdb|ent|cif|mmcif)$/i, '').toUpperCase().substring(0, 8); currentPdbId = name || "CUSTOM";
           const r = new FileReader(); r.onload = (e) => window.parseAndLoad(e.target.result); r.readAsText(f); 
       };
+
       window.fetchPDB = async () => {
           window.toggleSim(false);
           const id = document.getElementById('pdb-id').value.trim().toUpperCase(); if (!id) return;
           currentPdbId = id; if(ui.error) ui.error.style.display = 'none';
           ui.loader.style.display = 'flex'; state.isLoading = true; updateStatusUI();
           let txt = null;
-          const fetchWithTimeout = (url, ms=5000) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return fetch(url, {signal: c.signal}).then(res => res); };
+          const fetchWithTimeout = (url, ms=5000) => { const c = new AbortController(); const timer = setTimeout(() => c.abort(), ms); return fetch(url, {signal: c.signal}).finally(() => clearTimeout(timer)); };
           if (id.length === 4) {
-              const urls = [`https://files.rcsb.org/download/${id}.pdb`, `https://files.rcsb.org/view/${id}.pdb`];
+              const urls = [`https://files.rcsb.org/download/${id}.pdb`, `https://files.rcsb.org/view/${id}.pdb`, `https://files.rcsb.org/download/${id}.cif`];
               for (const url of urls) { try { const res = await fetchWithTimeout(url); if (res.ok) { txt = await res.text(); break; } } catch (e) {} }
           } else {
-              const url = `https://alphafold.ebi.ac.uk/files/AF-${id}-F1-model_v6.pdb`;
-              try { const res = await fetchWithTimeout(url); if (res.ok) txt = await res.text(); } catch(e) {}
+              const afVersions = ['v6', 'v4', 'v3'];
+              for (const ver of afVersions) {
+                const url = `https://alphafold.ebi.ac.uk/files/AF-${id}-F1-model_${ver}.pdb`;
+                try { const res = await fetchWithTimeout(url); if (res.ok) { txt = await res.text(); break; } } catch(e) {}
+              }
           }
           if (!txt) {
-              if(ui.error) { ui.error.style.display = 'block'; ui.error.innerText = "Error: ID not found (RCSB or AlphaFold) or network error."; }
+              if(ui.error) { ui.error.style.display = 'block'; ui.error.innerText = "Error: ID not found (RCSB PDB/mmCIF or AlphaFold) or network error."; }
               ui.loader.style.display = 'none'; state.isLoading = false; updateStatusUI(); return; 
           }
           window.parseAndLoad(txt);
       };
+
       function getChainBackground() {
           const mode = document.getElementById('art-color-mode')?.value || 'density';
-          const selId = (mode === 'residue') ? 'residue-bg-mode' : 'art-bg-mode';
+          const selId = (mode === 'residue' || mode === 'ss') ? 'residue-bg-mode' : 'art-bg-mode';
           const val = document.getElementById(selId)?.value || 'black';
           if (val === 'white') return {r:255, g:255, b:255};
           if (val === 'dark')  return {r:18,  g:18,  b:18 };
           return {r:0, g:0, b:0};
       }
+
       function updateArtPanelBackground() {
           if (!artPanelEl) return;
           const mode = document.getElementById('art-color-mode')?.value || 'density';
           const bg = (mode === 'density') ? getThemeBackground(ui.theme.value) : getChainBackground();
           artPanelEl.style.background = `rgb(${bg.r}, ${bg.g}, ${bg.b})`;
       }
+
       window.onChainPaletteChange = () => {
           if (!window.globalAtoms) return;
           const paletteKey = document.getElementById('chain-palette')?.value || 'default';
@@ -2422,26 +2919,18 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           const uniqueChains = [...new Set(window.globalAtoms.map(a => a.chain))].sort();
           uniqueChains.forEach((ch, idx) => {
               const c = palette[idx % palette.length];
-              window.chainColors[ch] = '#'
-                  + Math.round(c.r*255).toString(16).padStart(2,'0')
-                  + Math.round(c.g*255).toString(16).padStart(2,'0')
-                  + Math.round(c.b*255).toString(16).padStart(2,'0');
+              window.chainColors[ch] = '#' + Math.round(c.r*255).toString(16).padStart(2,'0') + Math.round(c.g*255).toString(16).padStart(2,'0') + Math.round(c.b*255).toString(16).padStart(2,'0');
           });
           const chainSection = document.getElementById('chain-color-section');
           if (chainSection) {
               chainSection.querySelectorAll('input[type="color"]').forEach((input, idx) => {
-                  const ch = uniqueChains[idx];
-                  if (ch) input.value = window.chainColors[ch];
+                  const ch = uniqueChains[idx]; if (ch) input.value = window.chainColors[ch];
               });
           }
-          rebuildColorArray();
-          window.clearArt(false);
+          rebuildColorArray(); window.clearArt(false);
       };
 
-      window.onBgModeChange = () => {
-          updateArtPanelBackground();
-          renderDisplay();
-      };
+      window.onBgModeChange = () => { updateArtPanelBackground(); renderDisplay(); };
 
       function updateStatusUI() {
           const workerActive = state.workerRunning;
@@ -2452,14 +2941,10 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (state.isRunning) label = "Pause Simulation";
           else if (!state.hasStructure) label = state.isLoading ? "Loading..." : "Load a Structure";
           else label = state.hasStarted ? "Resume Simulation" : "Start Simulation";
-          ui.toggleBtn.innerText = label;
-          ui.toggleBtn.disabled = state.isLoading || !state.hasStructure;
+          ui.toggleBtn.innerText = label; ui.toggleBtn.disabled = state.isLoading || !state.hasStructure;
           ui.toggleBtn.className = state.isRunning ? "btn btn-danger" : "btn btn-primary";
           const playIcon = document.getElementById('vp-play-icon');
-          if(playIcon) {
-              if(state.isRunning) playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-              else playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-          }
+          if(playIcon) { if(state.isRunning) playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; else playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>'; }
       }
       
       function rebuildColorArray() {
@@ -2467,20 +2952,20 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           const cMode = document.getElementById('art-color-mode')?.value || 'density';
           const colorArray = new Float32Array(window.globalAtoms.length * 3);
           for (let i = 0; i < window.globalAtoms.length; i++) {
-              const atom = window.globalAtoms[i];
-              let r, g, b;
+              const atom = window.globalAtoms[i]; let r, g, b;
               if (cMode === 'residue') {
                   if (atom.isNucleic) { r=0.68; g=0.54; b=0.99; }
                   else if (atom.isGlycan) { r=0.97; g=0.62; b=0.07; }
-                  else {
-                      const p = RESIDUE_PROPERTIES[atom.resName] || RESIDUE_PROPERTIES['UNK'];
-                      r=p[0]; g=p[1]; b=p[2];
-                  }
+                  else if (atom.isCofactor) { r=1.0; g=0.42; b=0.21; }
+                  else { const p = RESIDUE_PROPERTIES[atom.resName] || RESIDUE_PROPERTIES['UNK']; r=p[0]; g=p[1]; b=p[2]; }
+              } else if (cMode === 'ss') {
+                  if (atom.isNucleic) { r=0.68; g=0.54; b=0.99; }
+                  else if (atom.isGlycan) { r=0.97; g=0.62; b=0.07; }
+                  else if (atom.isCofactor) { r=1.0; g=0.42; b=0.21; }
+                  else { const c = SS_COLORS[atom.ss || 'C']; r=c[0]; g=c[1]; b=c[2]; }
               } else {
                   const hex = window.chainColors[atom.chain] || '#93c5fd';
-                  r = parseInt(hex.slice(1,3),16)/255;
-                  g = parseInt(hex.slice(3,5),16)/255;
-                  b = parseInt(hex.slice(5,7),16)/255;
+                  r = parseInt(hex.slice(1,3),16)/255; g = parseInt(hex.slice(3,5),16)/255; b = parseInt(hex.slice(5,7),16)/255;
               }
               colorArray[i*3]=r; colorArray[i*3+1]=g; colorArray[i*3+2]=b;
           }
@@ -2488,26 +2973,45 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           window.update3DColors();
       }
 
-      window.updateChainColor = (chain, hex) => {
-          window.chainColors[chain] = hex;
-          rebuildColorArray();
-      };
+      window.updateChainColor = (chain, hex) => { window.chainColors[chain] = hex; rebuildColorArray(); };
 
       window.onColorModeChange = () => {
           const mode = document.getElementById('art-color-mode')?.value || 'density';
           document.getElementById('density-panel').style.display  = (mode === 'density')  ? '' : 'none';
           document.getElementById('chain-panel').style.display    = (mode === 'chain')    ? '' : 'none';
-          document.getElementById('residue-panel').style.display  = (mode === 'residue')  ? '' : 'none';
+          document.getElementById('residue-panel').style.display  = (mode === 'residue' || mode === 'ss')  ? '' : 'none';
           const chainSection = document.getElementById('chain-color-section');
           if (chainSection) chainSection.style.display = (mode === 'chain') ? '' : 'none';
-          updateArtPanelBackground();
-          window.updateWorkerParams();
-          rebuildColorArray();
-          window.clearArt(false);
+          updateArtPanelBackground(); window.updateWorkerParams(); rebuildColorArray(); window.clearArt(false);
       };
 
+      function bindTouch() {
+          artPanelEl.addEventListener('touchstart', (e) => {
+              if (e.touches.length === 2) {
+                  e.preventDefault(); const t = e.touches; touchState.active = true;
+                  touchState.lastDist = Math.hypot(t[1].clientX - t[0].clientX, t[1].clientY - t[0].clientY);
+                  touchState.lastMidX = (t[0].clientX + t[1].clientX) / 2; touchState.lastMidY = (t[0].clientY + t[1].clientY) / 2;
+              }
+          }, { passive: false });
+
+          artPanelEl.addEventListener('touchmove', (e) => {
+              if (!touchState.active || e.touches.length !== 2) return;
+              e.preventDefault(); const t = e.touches;
+              const dist = Math.hypot(t[1].clientX - t[0].clientX, t[1].clientY - t[0].clientY);
+              const midX = (t[0].clientX + t[1].clientX) / 2, midY = (t[0].clientY + t[1].clientY) / 2;
+              const zoomDelta = (dist - touchState.lastDist) * 0.3;
+              const newZoom = Math.max(5, Math.min(200, parseFloat(ui.zoom.value) + zoomDelta));
+              ui.zoom.value = Math.round(newZoom); ui.zoomVal.textContent = Math.round(newZoom);
+              ui.panX.value = parseFloat(ui.panX.value) + (midX - touchState.lastMidX);
+              ui.panY.value = parseFloat(ui.panY.value) + (midY - touchState.lastMidY);
+              touchState.lastDist = dist; touchState.lastMidX = midX; touchState.lastMidY = midY;
+              window.updateWorkerParams(); window.clearArt(true); 
+          }, { passive: false });
+          artPanelEl.addEventListener('touchend', () => { touchState.active = false; });
+      }
+
       function bindUI() {
-          const send = () => window.updateWorkerParams();
+          const send = () => { window.updateWorkerParams(); };
           ui.temp.oninput = (e) => { ui.tempVal.textContent = parseFloat(e.target.value).toFixed(2); send(); };
           ui.k.oninput = (e) => { ui.kVal.textContent = parseFloat(e.target.value).toFixed(1); send(); };
           ui.speed.oninput = (e) => { ui.speedVal.textContent = parseFloat(e.target.value).toFixed(2) + "x"; send(); };
@@ -2515,28 +3019,32 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           ui.decay.oninput = (e) => { const val = parseFloat(e.target.value); ui.decayVal.textContent = val >= 99.9 ? "INF" : val.toFixed(1) + "%"; send(); };
           ui.jitter.oninput = (e) => { ui.jitterVal.textContent = e.target.value; send(); };
           if (ui.bloom) ui.bloom.oninput = (e) => { if(ui.bloomVal) ui.bloomVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
+          if (ui.depthfog) ui.depthfog.oninput = (e) => { if(ui.depthfogVal) ui.depthfogVal.textContent = parseFloat(e.target.value).toFixed(2); send(); window.clearArt(false); };
           ui.zoom.oninput = (e) => { ui.zoomVal.textContent = e.target.value; send(); window.clearArt(false); };
           ui.gamma.oninput = (e) => { ui.gammaVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
           ui.softness.oninput = (e) => { ui.softnessVal.textContent = parseFloat(e.target.value).toFixed(1); renderDisplay(); };
           
-          ui.theme.onchange = () => {
-              updateArtPanelBackground();
-              window.updateWorkerParams();
-              window.clearArt(false);
-          };
+          ui.theme.onchange = () => { updateArtPanelBackground(); window.updateWorkerParams(); window.clearArt(false); };
           ui.source.onchange = () => { window.updateWorkerParams(); window.clearArt(false); };
-          
           document.getElementById('pdb-id').addEventListener('input', () => { if(ui.error) ui.error.style.display = 'none'; });
+          document.getElementById('pdb-id').addEventListener('keydown', (e) => { if (e.key === 'Enter') window.fetchPDB(); });
           
-          // Camera Bindings
           const updateCam = () => { window.updateWorkerParams(); window.clearArt(false); };
           ui.rotX.oninput = updateCam; ui.rotY.oninput = updateCam; ui.rotZ.oninput = updateCam;
           ui.panX.oninput = updateCam; ui.panY.oninput = updateCam;
           
+          bindTouch();
           updateArtPanelBackground();
       }
 
       init();
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.code === 'Space') { e.preventDefault(); window.toggleSim(); }
+        else if (e.code === 'KeyS' && !e.ctrlKey && !e.metaKey) window.saveSnapshot();
+        else if (e.code === 'KeyC' && !e.ctrlKey && !e.metaKey) window.clearArt(false);
+        else if (e.code === 'KeyD' && !e.ctrlKey && !e.metaKey) window.downloadHighRes();
+      });
     </script>
   </body>
 </html>
