@@ -574,9 +574,6 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                 <option value="rough">Rough Sketch (Pencil/Paper)</option>
                 <option value="charcoal">Charcoal (Dark Sketch)</option>
                 <option value="graphite">Graphite (Clean Pencil)</option>
-                <option value="sakura">Sakura (Pink/White)</option>
-                <option value="lab">Laboratory (Clinical)</option>
-                <option value="editorial">Editorial (Red/BW)</option>
                 <option value="bio">Biohazard (Green)</option>
                 <option value="blueprint">Blueprint (Tech)</option>
                 <option value="heme">Heme Glow (Deep Red)</option>
@@ -586,17 +583,24 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                 <option value="quantum">Quantum Foam</option>
                 <option value="viridis">Viridis (Scientific)</option>
                 <option value="magma">Magma (Scientific)</option>
+                <option value="monochrome-gold">Monochrome Gold</option>
+                <option value="midnight-copper">Midnight Copper</option>
+                <option value="ethereal-blue">Ethereal Blue</option>
+                <option value="crimson-velvet">Crimson Velvet</option>
               </select>
             </div>
             <div class="mb-4">
               <label class="text-xs text-gray-500 block mb-1">Style Preset</label>
               <select id="style-preset" class="w-full" onchange="applyPreset(this.value)">
                 <option value="custom" selected>Custom</option>
-                <optgroup label="Scientific / Editorial">
-                    <option value="editorial-clean">Journal Figure (Ink)</option>
-                    <option value="editorial-dark">Cover Art (Viridis)</option>
+                <optgroup label="Scientific / Clean">
                     <option value="blueprint">Blueprint Technical</option>
-                    <option value="lab">Clinical Lab</option>
+                </optgroup>
+                <optgroup label="High Art / Office">
+                    <option value="office-gold">Monochrome Gold</option>
+                    <option value="office-copper">Midnight Copper</option>
+                    <option value="office-ethereal">Ethereal Blue</option>
+                    <option value="office-crimson">Crimson Velvet</option>
                 </optgroup>
                 <optgroup label="Emotional / Abstract">
                     <option value="chaos-fire">Inferno Collapse</option>
@@ -646,6 +650,16 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           <!-- RESIDUE & SS SUB-PANEL -->
           <div id="residue-panel" style="display:none">
             <div class="mb-4">
+              <label class="text-xs text-gray-500 block mb-1">Color Scheme</label>
+              <select id="residue-scheme" class="w-full" onchange="rebuildColorArray()">
+                <option value="shapely" selected>Shapely (Default)</option>
+                <option value="clustal">Clustal (Property)</option>
+                <option value="hydro">Hydrophobicity</option>
+                <option value="cinema">Cinema (Artistic)</option>
+                <option value="lesk">Lesk</option>
+              </select>
+            </div>
+            <div class="mb-4">
               <label class="text-xs text-gray-500 block mb-1">Background</label>
               <select id="residue-bg-mode" class="w-full" onchange="onBgModeChange()">
                 <option value="black" selected>Black</option>
@@ -682,7 +696,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           </div>
           <div class="slider-container">
             <div class="slider-header"><span>Trail Sharpness</span><span id="softness-val" class="slider-val">2.0</span></div>
-            <input type="range" id="art-softness" min="0.3" max="5.0" value="2.0" step="0.1" />
+            <input type="range" id="art-softness" min="0.3" max="50.0" value="2.0" step="0.1" />
           </div>
           <div class="slider-container">
             <div class="slider-header"><span>Texture/Noise</span><span id="intensity-val" class="slider-val">40</span></div>
@@ -696,17 +710,9 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
             <div class="slider-header"><span>Bloom / Glow</span><span id="bloom-val" class="slider-val">0.15</span></div>
             <input type="range" id="art-bloom" min="0" max="0.5" value="0.15" step="0.01" />
           </div>
-          <div class="slider-container" title="Depth fog — distant atoms fade into background.">
-            <div class="slider-header"><span>Depth Fog</span><span id="depthfog-val" class="slider-val">0.30</span></div>
-            <input type="range" id="art-depthfog" min="0" max="1.0" value="0.30" step="0.01" />
-          </div>
-          <div class="slider-container" title="Photographic depth of field focus plane">
-            <div class="slider-header"><span>DoF Focus</span><span id="dof-focus-val" class="slider-val">0.50</span></div>
-            <input type="range" id="art-dof-focus" min="0" max="1" value="0.5" step="0.01" oninput="document.getElementById('dof-focus-val').textContent=parseFloat(this.value).toFixed(2); renderDisplay();" />
-          </div>
-          <div class="slider-container" title="Photographic depth of field blur strength">
-            <div class="slider-header"><span>DoF Strength</span><span id="dof-strength-val" class="slider-val">0.00</span></div>
-            <input type="range" id="art-dof-strength" min="0" max="1" value="0" step="0.01" oninput="document.getElementById('dof-strength-val').textContent=parseFloat(this.value).toFixed(2); renderDisplay();" />
+          <div class="slider-container" title="Atmospheric depth and fog integration">
+            <div class="slider-header"><span>Atmospheric Depth</span><span id="atmosphere-val" class="slider-val">0.30</span></div>
+            <input type="range" id="art-atmosphere" min="0" max="1.0" value="0.30" step="0.01" />
           </div>
         </div>
         
@@ -753,7 +759,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           </div>
           <div class="flex gap-2 mb-3">
             <button onclick="copyToClipboard()" class="btn btn-secondary text-xs flex-1" title="Copy current canvas to clipboard" aria-label="Copy canvas to clipboard">Copy Img</button>
-            <button onclick="exportSVG()" class="btn btn-secondary text-xs flex-1" title="Export vectors">Export SVG</button>
+            <button onclick="resetSettings()" class="btn btn-danger text-xs flex-1" title="Reset all settings to default">Reset Settings</button>
           </div>
           <div class="flex items-center justify-between mb-4">
             <span class="text-xs text-gray-500">History Restore</span>
@@ -1566,7 +1572,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       
       const CHAIN_PALETTES = {
           'default': [new THREE.Color(0x93c5fd), new THREE.Color(0x6ee7b7), new THREE.Color(0xfbcfe8), new THREE.Color(0xfde68a), new THREE.Color(0xc084fc), new THREE.Color(0xfca5a5), new THREE.Color(0x67e8f9), new THREE.Color(0xe5e7eb)],
-          'spectral': [new THREE.Color(0x9e0142), new THREE.Color(0xd53e4f), new THREE.Color(0xf46d43), new THREE.Color(0xfdae61), new THREE.Color(0xfee08b), new THREE.Color(0xe6f598), new THREE.Color(0xabdda4), new THREE.Color(0x66c2a5), new THREE.Color(0x3288bd), new THREE.Color(0x5e4fa2)],
+          'spectral': [new THREE.Color(0x335c67), new THREE.Color(0xfff3b0), new THREE.Color(0xe09f3e), new THREE.Color(0x9e2a2b), new THREE.Color(0x540b0e)],
           'neon': [new THREE.Color(0xff00ff), new THREE.Color(0x00ffff), new THREE.Color(0xffff00), new THREE.Color(0xff0000), new THREE.Color(0x00ff00), new THREE.Color(0x0000ff)],
           'retro': [new THREE.Color(0x264653), new THREE.Color(0x2a9d8f), new THREE.Color(0xe9c46a), new THREE.Color(0xf4a261), new THREE.Color(0xe76f51)],
           'earth': [new THREE.Color(0x582f0e), new THREE.Color(0x7f4f24), new THREE.Color(0x936639), new THREE.Color(0xa68a64), new THREE.Color(0xb6ad90), new THREE.Color(0xc2c5aa), new THREE.Color(0xa4ac86), new THREE.Color(0x656d4a)],
@@ -1597,19 +1603,52 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       const SS_COLORS = { 'H': [0.94, 0.27, 0.51], 'E': [0.24, 0.60, 0.95], 'C': [0.75, 0.75, 0.75] };
 
       // Residue property colors [r, g, b] normalized 0–1
-      const RESIDUE_PROPERTIES = {
-          ALA:[0.98,0.45,0.09], VAL:[0.98,0.45,0.09], ILE:[0.98,0.45,0.09], LEU:[0.98,0.45,0.09], MET:[0.98,0.45,0.09], PHE:[0.98,0.45,0.09], TRP:[0.98,0.45,0.09], PRO:[0.98,0.45,0.09],
-          SER:[0.13,0.83,0.94], THR:[0.13,0.83,0.94], CYS:[0.13,0.83,0.94], TYR:[0.13,0.83,0.94], ASN:[0.13,0.83,0.94], GLN:[0.13,0.83,0.94],
-          LYS:[0.23,0.51,0.96], ARG:[0.23,0.51,0.96], HIS:[0.43,0.55,0.96],
-          ASP:[0.94,0.27,0.27], GLU:[0.94,0.27,0.27],
-          GLY:[0.82,0.82,0.82], UNK:[0.55,0.55,0.55]
+      const RESIDUE_SCHEMES = {
+          'shapely': {
+              ALA:[0.98,0.45,0.09], VAL:[0.98,0.45,0.09], ILE:[0.98,0.45,0.09], LEU:[0.98,0.45,0.09], MET:[0.98,0.45,0.09], PHE:[0.98,0.45,0.09], TRP:[0.98,0.45,0.09], PRO:[0.98,0.45,0.09],
+              SER:[0.13,0.83,0.94], THR:[0.13,0.83,0.94], CYS:[0.13,0.83,0.94], TYR:[0.13,0.83,0.94], ASN:[0.13,0.83,0.94], GLN:[0.13,0.83,0.94],
+              LYS:[0.23,0.51,0.96], ARG:[0.23,0.51,0.96], HIS:[0.43,0.55,0.96],
+              ASP:[0.94,0.27,0.27], GLU:[0.94,0.27,0.27],
+              GLY:[0.82,0.82,0.82], UNK:[0.55,0.55,0.55]
+          },
+          'clustal': {
+              ALA:[0.5,0.6,0.9], VAL:[0.5,0.6,0.9], LEU:[0.5,0.6,0.9], ILE:[0.5,0.6,0.9], MET:[0.5,0.6,0.9], CYS:[0.9,0.5,0.5],
+              PHE:[0.2,0.7,0.2], TYR:[0.2,0.7,0.2], TRP:[0.2,0.7,0.2],
+              SER:[0.2,0.9,0.2], THR:[0.2,0.9,0.2], ASN:[0.2,0.9,0.2], GLN:[0.2,0.9,0.2],
+              LYS:[0.9,0.2,0.2], ARG:[0.9,0.2,0.2],
+              ASP:[0.8,0.2,0.8], GLU:[0.8,0.2,0.8],
+              HIS:[0.2,0.6,0.8], PRO:[0.8,0.8,0.2], GLY:[0.9,0.6,0.2], UNK:[0.5,0.5,0.5]
+          },
+          'hydro': {
+              PHE:[0.1,0.1,0.9], ILE:[0.2,0.2,0.9], LEU:[0.3,0.3,0.9], VAL:[0.4,0.4,0.9], MET:[0.5,0.5,0.9],
+              TRP:[0.6,0.6,0.9], CYS:[0.7,0.7,0.9], ALA:[0.8,0.8,0.9], GLY:[0.9,0.9,0.9],
+              THR:[0.9,0.8,0.8], SER:[0.9,0.7,0.7], PRO:[0.9,0.6,0.6], TYR:[0.9,0.5,0.5],
+              HIS:[0.9,0.4,0.4], GLN:[0.9,0.3,0.3], ASN:[0.9,0.2,0.2], GLU:[0.9,0.1,0.1], ASP:[0.9,0.0,0.0],
+              LYS:[0.8,0.0,0.0], ARG:[0.7,0.0,0.0], UNK:[0.5,0.5,0.5]
+          },
+          'lesk': {
+              ALA:[0.9,0.6,0.1], VAL:[0.9,0.6,0.1], LEU:[0.9,0.6,0.1], ILE:[0.9,0.6,0.1], PHE:[0.9,0.6,0.1], PRO:[0.9,0.6,0.1], MET:[0.9,0.6,0.1], TRP:[0.9,0.6,0.1],
+              GLY:[0.9,0.9,0.9], SER:[0.9,0.9,0.9], THR:[0.9,0.9,0.9], CYS:[0.9,0.9,0.9], TYR:[0.9,0.9,0.9], ASN:[0.9,0.9,0.9], GLN:[0.9,0.9,0.9],
+              ASP:[0.9,0.2,0.2], GLU:[0.9,0.2,0.2],
+              LYS:[0.2,0.2,0.9], ARG:[0.2,0.2,0.9], HIS:[0.2,0.2,0.9], UNK:[0.5,0.5,0.5]
+          },
+          'cinema': {
+              ALA:[0.8,0.2,0.3], VAL:[0.9,0.3,0.2], LEU:[0.9,0.5,0.2], ILE:[0.9,0.6,0.2], MET:[0.9,0.7,0.2],
+              PHE:[0.5,0.2,0.6], TRP:[0.6,0.2,0.7], TYR:[0.7,0.2,0.8],
+              CYS:[0.2,0.8,0.3], SER:[0.2,0.9,0.4], THR:[0.2,0.9,0.6],
+              ASN:[0.2,0.8,0.9], GLN:[0.2,0.7,0.9],
+              ASP:[0.9,0.1,0.4], GLU:[0.9,0.2,0.5],
+              LYS:[0.1,0.4,0.9], ARG:[0.2,0.5,0.9], HIS:[0.3,0.6,0.9],
+              PRO:[0.6,0.6,0.6], GLY:[0.8,0.8,0.8], UNK:[0.5,0.5,0.5]
+          }
       };
 
       const PRESETS = {
-        'editorial-clean': { theme: 'ink', zoom: 45, decay: 98.5, gamma: 0.7, intensity: 45, jitter: 0.2 },
-        'editorial-dark': { theme: 'viridis', zoom: 40, decay: 99.0, gamma: 0.6, intensity: 50, jitter: 0.3 },
         'blueprint': { theme: 'blueprint', zoom: 50, decay: 97.0, gamma: 0.5, intensity: 60, jitter: 0.1 },
-        'lab': { theme: 'lab', zoom: 45, decay: 98.0, gamma: 0.6, intensity: 50, jitter: 0.2 },
+        'office-gold': { theme: 'monochrome-gold', zoom: 45, decay: 98.0, gamma: 0.6, intensity: 50, jitter: 0.2 },
+        'office-copper': { theme: 'midnight-copper', zoom: 45, decay: 98.0, gamma: 0.6, intensity: 50, jitter: 0.2 },
+        'office-ethereal': { theme: 'ethereal-blue', zoom: 45, decay: 98.0, gamma: 0.6, intensity: 50, jitter: 0.2 },
+        'office-crimson': { theme: 'crimson-velvet', zoom: 45, decay: 98.0, gamma: 0.6, intensity: 50, jitter: 0.2 },
         'chaos-fire': { theme: 'magma', zoom: 30, decay: 96.0, gamma: 0.4, intensity: 80, jitter: 1.5 },
         'chaos-gold': { theme: 'gold', zoom: 35, decay: 97.5, gamma: 0.5, intensity: 60, jitter: 1.0 },
         'sketch': { theme: 'rough', zoom: 40, decay: 92.0, gamma: 0.6, intensity: 70, jitter: 0.8 },
@@ -1617,7 +1656,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       };
 
       // ANIMATION TIMELINE
-      const ANIMATABLE_PARAMS = ['temp', 'k', 'speed', 'zoom', 'decay', 'gamma', 'softness', 'intensity', 'jitter', 'bloom', 'depthfog', 'rotX', 'rotY', 'rotZ', 'panX', 'panY'];
+      const ANIMATABLE_PARAMS = ['temp', 'k', 'speed', 'zoom', 'decay', 'gamma', 'softness', 'intensity', 'jitter', 'bloom', 'atmosphere', 'rotX', 'rotY', 'rotZ', 'panX', 'panY'];
       let keyframes = [];
       let timelinePlaying = false;
       let timelineStartTime = 0;
@@ -1672,7 +1711,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           intensity: document.getElementById('art-intensity'), intensityVal: document.getElementById('intensity-val'), jitter: document.getElementById('art-jitter'),
           jitterVal: document.getElementById('jitter-val'),
           bloom: document.getElementById('art-bloom'),
-          depthfog: document.getElementById('art-depthfog'), depthfogVal: document.getElementById('depthfog-val'),
+          atmosphere: document.getElementById('art-atmosphere'), atmosphereVal: document.getElementById('atmosphere-val'),
           bloomVal: document.getElementById('bloom-val'),
           theme: document.getElementById('art-theme'),
           preset: document.getElementById('style-preset'),
@@ -1692,8 +1731,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           viewColorMode: document.getElementById('view-color-mode'),
           rotX: document.getElementById('cam-rot-x'), rotY: document.getElementById('cam-rot-y'), rotZ: document.getElementById('cam-rot-z'),
           panX: document.getElementById('cam-pan-x'), panY: document.getElementById('cam-pan-y'),
-          spinToggle: document.getElementById('spin-toggle'), spinSpeed: document.getElementById('spin-speed'), spinVal: document.getElementById('spin-val'),
-          dofFocus: document.getElementById('art-dof-focus'), dofStrength: document.getElementById('art-dof-strength')
+          spinToggle: document.getElementById('spin-toggle'), spinSpeed: document.getElementById('spin-speed'), spinVal: document.getElementById('spin-val')
       };
 
       class UnionFind {
@@ -1716,7 +1754,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           params.set('intensity', ui.intensity.value);
           params.set('jitter', ui.jitter.value);
           params.set('bloom', ui.bloom ? ui.bloom.value : '0.15');
-          params.set('depthfog', ui.depthfog ? ui.depthfog.value : '0.3');
+          params.set('atmosphere', ui.atmosphere ? ui.atmosphere.value : '0.3');
           params.set('source', ui.source.value);
           params.set('cmode', document.getElementById('art-color-mode')?.value || 'density');
           params.set('rx', ui.rotX.value); params.set('ry', ui.rotY.value); params.set('rz', ui.rotZ.value);
@@ -1746,7 +1784,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (p.has('intensity')){ ui.intensity.value = p.get('intensity'); ui.intensityVal.textContent = p.get('intensity'); }
           if (p.has('jitter')){ ui.jitter.value = p.get('jitter'); ui.jitterVal.textContent = p.get('jitter'); }
           if (p.has('bloom')) { ui.bloom.value = p.get('bloom'); ui.bloomVal.textContent = p.get('bloom'); }
-          if (p.has('depthfog')){ ui.depthfog.value = p.get('depthfog'); ui.depthfogVal.textContent = p.get('depthfog'); }
+          if (p.has('atmosphere')){ ui.atmosphere.value = p.get('atmosphere'); ui.atmosphereVal.textContent = p.get('atmosphere'); }
           if (p.has('cmode')) { const el = document.getElementById('art-color-mode'); if(el) el.value = p.get('cmode'); }
           if (p.has('rx')) ui.rotX.value = p.get('rx');
           if (p.has('ry')) ui.rotY.value = p.get('ry');
@@ -1754,6 +1792,37 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           if (p.has('px')) ui.panX.value = p.get('px');
           if (p.has('py')) ui.panY.value = p.get('py');
       }
+
+      window.resetSettings = () => {
+          ui.theme.value = 'sunset';
+          ui.temp.value = '0.05'; ui.tempVal.textContent = '0.05';
+          ui.k.value = '5.0'; ui.kVal.textContent = '5.0';
+          ui.speed.value = '1.0'; ui.speedVal.textContent = '1.00x';
+          ui.zoom.value = '40'; ui.zoomVal.textContent = '40';
+          ui.decay.value = '98'; ui.decayVal.textContent = '98.0%';
+          ui.gamma.value = '0.0'; ui.gammaVal.textContent = '0.00';
+          ui.softness.value = '2.0'; ui.softnessVal.textContent = '2.0';
+          ui.intensity.value = '40'; ui.intensityVal.textContent = '40';
+          ui.jitter.value = '0.8'; ui.jitterVal.textContent = '0.8';
+          ui.bloom.value = '0.15'; ui.bloomVal.textContent = '0.15';
+          ui.atmosphere.value = '0.3'; ui.atmosphereVal.textContent = '0.3';
+          ui.rotX.value = '0'; ui.rotY.value = '0'; ui.rotZ.value = '0';
+          ui.panX.value = '0'; ui.panY.value = '0';
+          document.getElementById('art-color-mode').value = 'density';
+          document.getElementById('chain-palette').value = 'default';
+          document.getElementById('chain-style').value = 'normal';
+          document.getElementById('residue-scheme').value = 'shapely';
+          document.getElementById('residue-bg-mode').value = 'black';
+          document.getElementById('density-panel').style.display = '';
+          document.getElementById('chain-panel').style.display = 'none';
+          document.getElementById('residue-panel').style.display = 'none';
+          document.getElementById('ss-panel').style.display = 'none';
+          updateArtPanelBackground();
+          window.updateWorkerParams();
+          rebuildColorArray();
+          window.clearArt(false);
+          renderDisplay();
+      };
 
       function init() {
           setupThreeJS();
@@ -1768,11 +1837,11 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           loadURLParams();
           requestAnimationFrame(tick);
           const p = new URLSearchParams(window.location.search);
-          if (p.has('pdb') || p.has('af')) setTimeout(window.fetchPDB, 100);
+          setTimeout(window.fetchPDB, 100);
       }
 
       function paramToElementId(param) {
-          const map = { temp: 'temp-slider', k: 'k-restraint', speed: 'sim-speed', zoom: 'art-zoom-control', decay: 'art-decay', gamma: 'art-gamma', softness: 'art-softness', intensity: 'art-intensity', jitter: 'art-jitter', bloom: 'art-bloom', depthfog: 'art-depthfog', rotX: 'cam-rot-x', rotY: 'cam-rot-y', rotZ: 'cam-rot-z', panX: 'cam-pan-x', panY: 'cam-pan-y' };
+          const map = { temp: 'temp-slider', k: 'k-restraint', speed: 'sim-speed', zoom: 'art-zoom-control', decay: 'art-decay', gamma: 'art-gamma', softness: 'art-softness', intensity: 'art-intensity', jitter: 'art-jitter', bloom: 'art-bloom', atmosphere: 'art-atmosphere', rotX: 'cam-rot-x', rotY: 'cam-rot-y', rotZ: 'cam-rot-z', panX: 'cam-pan-x', panY: 'cam-pan-y' };
           return map[param] || param;
       }
 
@@ -2316,8 +2385,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
 
       function buildRestraintsSpatial(newAtoms) {
           const restraints = [];
-          const cellSize = 5.0; 
-          const maxContact = 12.0; 
+          const cellSize = 3.5; 
+          const maxContact = 3.5; 
           const maxRange = Math.ceil(maxContact / cellSize);
 
           const cells = new Map();
@@ -2509,19 +2578,12 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           }
 
           if (!isRGB) {
-              const useGrain = (theme === 'rough' || theme === 'charcoal' || theme === 'graphite') && grainMap;
               for (let i = 0; i < buf.length; i++) {
                   const val = buf[i]; const idx = i * 4;
                   let r = bg.r, g = bg.g, b = bg.b;
                   if (val > 0.0) {
                       const logC = Math.log1p(val) / logDen; const norm = toneMap(logC);
                       if (norm > 0) { const rgb = applyTheme(theme, norm, bg); r = rgb.r; g = rgb.g; b = rgb.b; }
-                  }
-                  if (useGrain && grainMap) {
-                      const gx2 = (i % artWidth) & 255, gy2 = Math.floor(i / artWidth) & 255;
-                      const rawG = grainMap[gy2*256+gx2]; const lum = (r + g + b) / 765.0; const gs = 1.0 - lum * 0.75;
-                      const grain = 0.88 + rawG * 0.12 * gs;
-                      r = r * grain; g = g * grain; b = b * grain;
                   }
                   data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255;
               }
@@ -2542,49 +2604,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           
           artCtx.putImageData(viewImageData, 0, 0);
 
-          // Apply Depth of Field
-          const dofStrength = parseFloat(ui.dofStrength?.value || '0');
-          if (dofStrength > 0.01) {
-              const focusPlane = parseFloat(ui.dofFocus?.value || '0.5');
-              const maxBlur = Math.round(dofStrength * artWidth * 0.02);
-              const tempCanvas = document.createElement('canvas'); tempCanvas.width = artWidth >> 1; tempCanvas.height = artHeight >> 1;
-              const tempCtx = tempCanvas.getContext('2d');
-              artCtx.save();
-              tempCtx.filter = `blur(${maxBlur}px)`; tempCtx.drawImage(artCanvas, 0, 0, tempCanvas.width, tempCanvas.height); tempCtx.filter = 'none';
 
-              const maskCanvas = document.createElement('canvas'); maskCanvas.width = artWidth; maskCanvas.height = artHeight;
-              const maskCtx = maskCanvas.getContext('2d');
-              const focusY = focusPlane; const bandWidth = 0.15;
-              if (latestDepthBuffer && latestDepthBuffer.length === artWidth * artHeight) {
-                  const maskImg = maskCtx.createImageData(artWidth, artHeight);
-                  const mData = maskImg.data;
-                  for (let i = 0; i < latestDepthBuffer.length; i++) {
-                      const zNorm = latestDepthBuffer[i];
-                      const diff = Math.abs(zNorm - focusPlane);
-                      let alpha = 0;
-                      if (diff > bandWidth * 0.5) {
-                          alpha = Math.min(1.0, (diff - bandWidth * 0.5) / bandWidth);
-                      }
-                      const idx = i * 4;
-                      mData[idx] = 0; mData[idx+1] = 0; mData[idx+2] = 0; mData[idx+3] = alpha * dofStrength * 255;
-                  }
-                  maskCtx.putImageData(maskImg, 0, 0);
-              } else {
-                  const gradient = maskCtx.createLinearGradient(0, 0, 0, artHeight);
-                  gradient.addColorStop(0, `rgba(0,0,0,${dofStrength})`);
-                  gradient.addColorStop(Math.max(0, focusY - bandWidth), `rgba(0,0,0,${dofStrength * 0.5})`);
-                  gradient.addColorStop(focusY, 'rgba(0,0,0,0)');
-                  gradient.addColorStop(Math.min(1, focusY + bandWidth), `rgba(0,0,0,${dofStrength * 0.5})`);
-                  gradient.addColorStop(1, `rgba(0,0,0,${dofStrength})`);
-                  maskCtx.fillStyle = gradient; maskCtx.fillRect(0, 0, artWidth, artHeight);
-              }
-              maskCtx.globalCompositeOperation = 'source-in';
-              maskCtx.drawImage(tempCanvas, 0, 0, artWidth, artHeight);
-              
-              artCtx.globalCompositeOperation = 'source-over';
-              artCtx.drawImage(maskCanvas, 0, 0);
-              artCtx.restore();
-          }
 
           // Bloom pass
           const bloomVal = ui.bloom ? parseFloat(ui.bloom.value) : 0;
@@ -2623,11 +2643,14 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       }
 
       function getThemeBackground(theme) {
-          if (['ink', 'graphite', 'sakura', 'lab', 'editorial', 'rough'].includes(theme)) return {r: 255, g: 255, b: 255};
+          if (['ink', 'graphite', 'rough'].includes(theme)) return {r: 255, g: 255, b: 255};
           if (theme === 'charcoal') return {r: 30, g: 30, b: 30}; 
           if (theme === 'heme') return {r: 20, g: 5, b: 5}; 
           if (theme === 'electrostatic') return {r: 10, g: 10, b: 30}; 
-          if (theme === 'gold') return {r: 20, g: 15, b: 5}; 
+          if (theme === 'gold' || theme === 'monochrome-gold') return {r: 20, g: 15, b: 5}; 
+          if (theme === 'midnight-copper') return {r: 5, g: 10, b: 15};
+          if (theme === 'ethereal-blue') return {r: 2, g: 2, b: 8};
+          if (theme === 'crimson-velvet') return {r: 15, g: 2, b: 5};
           if (theme === 'viridis') return {r: 68, g: 1, b: 84};
           if (theme === 'magma') return {r: 15, g: 0, b: 30};
           if (theme === 'blueprint') return {r: 10, g: 30, b: 80};
@@ -2644,15 +2667,16 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           else if (theme === 'rough') { const val = (1 - Math.pow(t, 0.6)) * 200 + 55; r = val; g = val - 10; b = val - 20; }
           else if (theme === 'charcoal') { const val = bg.r + t * (255 - bg.r); r = val; g = val; b = val; }
           else if (theme === 'graphite') { const val = (1 - t) * 230 + 25; r = val; g = val; b = val; }
-          else if (theme === 'sakura') { r = 255; g = (1-t) * 180 + 75; b = (1-t) * 190 + 180; }
-          else if (theme === 'lab') { r = (1-t) * 255; g = (1-t) * 255 + t * 240; b = 255; }
-          else if (theme === 'editorial') { if (t < 0.4) { const val = (1 - (t/0.4)) * 200; r=val; g=val; b=val; } else { const val = (t - 0.4) / 0.6; r = val * 255; g=0; b=0; } }
           else if (theme === 'heme') { const warm = Math.min(1, t * 1.5); r = 26 + warm * 229; g = 5 + warm * 40; b = 5 + warm * 60; }
           else if (theme === 'electrostatic') { const p = Math.pow(t, 0.9), n = Math.pow(1 - t, 0.8); r = 10 + p * 200; g = 10 + Math.min(245, p * 80 + n * 100); b = 26 + n * 229; }
-          else if (theme === 'blueprint') { const val = bg.r + t * 200; r = Math.min(255, val + 180); g = Math.min(255, val + 180); b = Math.min(255, val + 180); }
+          else if (theme === 'blueprint') { const line = Math.pow(t, 1.5); r = bg.r + line * (255 - bg.r); g = bg.g + line * (255 - bg.g); b = bg.b + line * (255 - bg.b); }
           else if (theme === 'bio') { r = t * 50; g = t * 255; b = t * 80; }
           else if (theme === 'cyber') { r = t * 255; g = (1-t)*255; b = 255; }
           else if (theme === 'gold') { r = 15 + t * 240; g = 10 + t * 205; b = t * 100; }
+          else if (theme === 'monochrome-gold') { const gold = Math.pow(t, 0.8); r = bg.r + gold * (255 - bg.r); g = bg.g + gold * (215 - bg.g); b = bg.b + gold * (100 - bg.b); }
+          else if (theme === 'midnight-copper') { const cop = Math.pow(t, 0.7); r = bg.r + cop * (255 - bg.r); g = bg.g + cop * (140 - bg.g); b = bg.b + cop * (80 - bg.b); }
+          else if (theme === 'ethereal-blue') { const eb = Math.pow(t, 1.2); r = bg.r + eb * (100 - bg.r); g = bg.g + eb * (220 - bg.g); b = bg.b + eb * (255 - bg.b); }
+          else if (theme === 'crimson-velvet') { const cr = Math.pow(t, 0.9); r = bg.r + cr * (255 - bg.r); g = bg.g + cr * (50 - bg.g); b = bg.b + cr * (60 - bg.b); }
           else if (theme === 'quantum') { const glow = Math.pow(t, 0.6); r = 60 + glow * 195; g = 50 + Math.pow(t, 1.2) * 140; b = 160 + glow * 95; }
           else if (theme === 'viridis') { if (t < 0.33) { const lt = t / 0.33; r = 68 + (59-68)*lt; g = 1 + (82-1)*lt; b = 84 + (139-84)*lt; } else if (t < 0.66) { const lt = (t - 0.33) / 0.33; r = 59 + (33-59)*lt; g = 82 + (144-82)*lt; b = 139 + (141-139)*lt; } else { const lt = (t - 0.66) / 0.34; r = 33 + (253-33)*lt; g = 144 + (231-144)*lt; b = 141 + (37-141)*lt; } }
           else if (theme === 'magma') { if (t < 0.33) { const lt = t / 0.33; r = 15 + (81-15)*lt; g = 0 + (24-0)*lt; b = 30 + (124-30)*lt; } else if (t < 0.66) { const lt = (t - 0.33) / 0.33; r = 81 + (227-81)*lt; g = 24 + (89-24)*lt; b = 124 + (51-124)*lt; } else { const lt = (t - 0.66) / 0.34; r = 227 + (252-227)*lt; g = 89 + (253-89)*lt; b = 51 + (191-51)*lt; } }
@@ -2741,7 +2765,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   temp: parseFloat(ui.temp.value), k: parseFloat(ui.k.value), speed: parseFloat(ui.speed.value),
                   zoom: scaledZoom, jitter: parseFloat(ui.jitter.value), intensity: parseFloat(ui.intensity.value),
                   source: ui.source.value, decay: decayFactor,
-                  depthFog: parseFloat(ui.depthfog ? ui.depthfog.value : '0.3'),
+                  depthFog: parseFloat(ui.atmosphere ? ui.atmosphere.value : '0.3'),
                   rotX: parseFloat(ui.rotX.value), rotY: parseFloat(ui.rotY.value), rotZ: parseFloat(ui.rotZ.value),
                   panX: parseFloat(ui.panX.value) * renderScale, panY: parseFloat(ui.panY.value) * renderScale,
                   colorMode: cmode
@@ -2818,43 +2842,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           });
       };
 
-      window.exportSVG = () => {
-          if (!window.globalAtoms || !window.globalBonds) { alert('Load a structure first'); return; }
-          const atoms = window.globalAtoms, bonds = window.globalBonds, w = artWidth, h = artHeight;
-          const theme = ui.theme.value, bg = getThemeBackground(theme);
-          const zoom = parseFloat(ui.zoom.value) * renderScale;
-          const panX = parseFloat(ui.panX.value) * renderScale, panY = parseFloat(ui.panY.value) * renderScale;
-          
-          const radX = (parseFloat(ui.rotX.value)||0)*Math.PI/180, radY = (parseFloat(ui.rotY.value)||0)*Math.PI/180, radZ = (parseFloat(ui.rotZ.value)||0)*Math.PI/180;
-          const cxr=Math.cos(radX),sxr=Math.sin(radX), cyr=Math.cos(radY),syr=Math.sin(radY), czr=Math.cos(radZ),szr=Math.sin(radZ);
-          const m00=cyr*czr, m01=czr*sxr*syr-cxr*szr, m02=cxr*czr*syr+sxr*szr, m10=cyr*szr, m11=cxr*czr+sxr*syr*szr, m12=cxr*syr*szr-czr*sxr;
 
-          const projected = atoms.map(a => ({
-              x: (m00*a.x + m01*a.y + m02*a.z) * zoom + w/2 + panX,
-              y: (m10*a.x + m11*a.y + m12*a.z) * zoom + h/2 + panY,
-          }));
-
-          let svg = `<?xml version="1.0" encoding="UTF-8"?>\n<!-- ProteinCHAOS SVG Export | ${currentPdbId} | Theme: ${theme} -->\n<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n<rect width="100%" height="100%" fill="rgb(${bg.r},${bg.g},${bg.b})" />\n<g opacity="0.8">\n`;
-
-          const midColor = applyTheme(theme, 0.7, bg);
-          const defaultStroke = `rgb(${Math.round(midColor.r)},${Math.round(midColor.g)},${Math.round(midColor.b)})`;
-          const cMode = document.getElementById('art-color-mode')?.value || 'density';
-
-          for (const bond of bonds) {
-              const p1 = projected[bond.i], p2 = projected[bond.j], vw = bond.visualWeight || 0.5;
-              const strokeWidth = Math.max(0.3, vw * 2);
-              let strokeColor = defaultStroke;
-              if (cMode === 'chain') strokeColor = window.chainColors[atoms[bond.i].chain] || defaultStroke;
-              svg += `  <line x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" opacity="${vw}" />\n`;
-          }
-          svg += `</g>\n</svg>`;
-          
-          const blob = new Blob([svg], { type: 'image/svg+xml' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.download = `chaos_${currentPdbId}_${theme}.svg`;
-          a.href = url; a.click(); URL.revokeObjectURL(url);
-      };
 
       window.copyToClipboard = () => {
           if (!latestBuffer) { alert("Nothing to copy yet — run the simulation first."); return; }
@@ -2950,6 +2938,8 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
       function rebuildColorArray() {
           if (!window.globalAtoms) return;
           const cMode = document.getElementById('art-color-mode')?.value || 'density';
+          const schemeName = document.getElementById('residue-scheme')?.value || 'shapely';
+          const scheme = RESIDUE_SCHEMES[schemeName] || RESIDUE_SCHEMES['shapely'];
           const colorArray = new Float32Array(window.globalAtoms.length * 3);
           for (let i = 0; i < window.globalAtoms.length; i++) {
               const atom = window.globalAtoms[i]; let r, g, b;
@@ -2957,7 +2947,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
                   if (atom.isNucleic) { r=0.68; g=0.54; b=0.99; }
                   else if (atom.isGlycan) { r=0.97; g=0.62; b=0.07; }
                   else if (atom.isCofactor) { r=1.0; g=0.42; b=0.21; }
-                  else { const p = RESIDUE_PROPERTIES[atom.resName] || RESIDUE_PROPERTIES['UNK']; r=p[0]; g=p[1]; b=p[2]; }
+                  else { const p = scheme[atom.resName] || scheme['UNK']; r=p[0]; g=p[1]; b=p[2]; }
               } else if (cMode === 'ss') {
                   if (atom.isNucleic) { r=0.68; g=0.54; b=0.99; }
                   else if (atom.isGlycan) { r=0.97; g=0.62; b=0.07; }
@@ -3019,7 +3009,7 @@ Inspired by long exposure photography, generative art, and molecular dynamics si
           ui.decay.oninput = (e) => { const val = parseFloat(e.target.value); ui.decayVal.textContent = val >= 99.9 ? "INF" : val.toFixed(1) + "%"; send(); };
           ui.jitter.oninput = (e) => { ui.jitterVal.textContent = e.target.value; send(); };
           if (ui.bloom) ui.bloom.oninput = (e) => { if(ui.bloomVal) ui.bloomVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
-          if (ui.depthfog) ui.depthfog.oninput = (e) => { if(ui.depthfogVal) ui.depthfogVal.textContent = parseFloat(e.target.value).toFixed(2); send(); window.clearArt(false); };
+          if (ui.atmosphere) ui.atmosphere.oninput = (e) => { if(ui.atmosphereVal) ui.atmosphereVal.textContent = parseFloat(e.target.value).toFixed(2); send(); window.clearArt(false); };
           ui.zoom.oninput = (e) => { ui.zoomVal.textContent = e.target.value; send(); window.clearArt(false); };
           ui.gamma.oninput = (e) => { ui.gammaVal.textContent = parseFloat(e.target.value).toFixed(2); renderDisplay(); };
           ui.softness.oninput = (e) => { ui.softnessVal.textContent = parseFloat(e.target.value).toFixed(1); renderDisplay(); };
